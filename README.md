@@ -17,6 +17,7 @@ Ce compilateur transforme du **pseudo-code français** en **code Python** exécu
 - Analyse lexicale (Lexer)
 - Analyse syntaxique (Parser)
 - Arbre Syntaxique Abstrait (AST)
+- **Analyse sémantique (SemanticAnalyzer)** ← NOUVEAU
 - Génération de code
 
 ### Caractéristiques
@@ -24,6 +25,7 @@ Ce compilateur transforme du **pseudo-code français** en **code Python** exécu
 - ✅ Langage cible : Python 3
 - ✅ Méthode d'analyse : Descente récursive
 - ✅ Code Python généré : Script plat (pas de classes, pas de `try/except`)
+- ✅ **Analyse sémantique : Vérification des types et des variables** ← NOUVEAU
 
 ---
 
@@ -47,6 +49,9 @@ compilateur/
     ├── Lexer.java                  # Analyseur lexical
     ├── AST.java                    # Arbre Syntaxique Abstrait
     ├── Parser.java                 # Analyseur syntaxique
+    ├── SymbolTable.java            # Table des symboles (NOUVEAU)
+    ├── SemanticException.java      # Exception sémantique (NOUVEAU)
+    ├── SemanticAnalyzer.java       # Analyseur sémantique (NOUVEAU)
     ├── PythonGenerator.java        # Générateur Python
     └── Main.java                   # Point d'entrée
 ```
@@ -135,10 +140,18 @@ FIN
 │ Fichier.pso │ --> │  Lexer  │ --> │ Tokens  │ --> │   Parser    │ --> │   AST   │
 └─────────────┘     └─────────┘     └─────────┘     └─────────────┘     └────┬────┘
                                                                               │
-                    ┌─────────────┐     ┌───────────────────┐                 │
-                    │ Fichier.py  │ <-- │ PythonGenerator   │ <───────────────┘
-                    └─────────────┘     └───────────────────┘
+                                                                              ▼
+                    ┌─────────────┐     ┌───────────────────┐     ┌───────────────────┐
+                    │ Fichier.py  │ <-- │ PythonGenerator   │ <-- │ SemanticAnalyzer  │
+                    └─────────────┘     └───────────────────┘     └───────────────────┘
+                                                                         │
+                                                                         ▼
+                                                                  ┌─────────────┐
+                                                                  │ SymbolTable │
+                                                                  └─────────────┘
 ```
+
+**Note importante :** Si l'analyse sémantique détecte des erreurs, le fichier Python n'est **pas généré**.
 
 ### 1. Lexer (Analyse Lexicale)
 **Fichier :** `Lexer.java`
@@ -165,6 +178,52 @@ Chaque règle de grammaire correspond à une méthode :
 - `parseExpression()` → Une expression
 - `parseSi()` → Structure SI/ALORS/SINON
 - `parseTantQue()` → Boucle TANTQUE
+
+### 2.5. Analyseur Sémantique (NOUVEAU)
+**Fichiers :** `SemanticAnalyzer.java`, `SymbolTable.java`, `SemanticException.java`
+
+L'analyseur sémantique vérifie la **cohérence logique** du programme après la construction de l'AST. Il s'exécute **avant** la génération Python.
+
+#### Vérifications effectuées :
+
+| Vérification | Description | Exemple d'erreur |
+|--------------|-------------|------------------|
+| **Existence** | Une variable doit être déclarée avant utilisation | `Variable 'x' non déclarée` |
+| **Doublons** | Une variable ne peut pas être déclarée deux fois | `Variable 'x' déjà déclarée` |
+| **Types** | Affectation compatible (ENTIER ↔ ENTIER, TEXTE ↔ TEXTE) | `Incompatibilité de types: impossible d'affecter un TEXTE à 'x' de type ENTIER` |
+| **Opérations** | Les opérateurs +, -, *, / ne fonctionnent qu'avec des ENTIERS | `L'opérateur '+' ne peut être utilisé qu'avec des ENTIERS` |
+
+#### Table des symboles :
+
+La `SymbolTable` stocke chaque variable déclarée avec :
+- Son **nom**
+- Son **type** (ENTIER ou TEXTE)
+- Sa **ligne de déclaration**
+
+#### Exemple d'erreur sémantique :
+
+**Pseudo-code avec erreur :**
+```
+ALGORITHME Erreur
+
+VARIABLES
+    x : ENTIER
+
+DEBUT
+    x <- "Bonjour"   // ❌ Erreur : affectation de TEXTE dans ENTIER
+    y <- 5           // ❌ Erreur : variable 'y' non déclarée
+FIN
+```
+
+**Message d'erreur :**
+```
+❌ Erreur sémantique détectée:
+Analyse sémantique échouée avec 2 erreur(s):
+  1. Incompatibilité de types: impossible d'affecter un TEXTE à la variable 'x' de type ENTIER.
+  2. Variable 'y' non déclarée. Déclarez-la dans la section VARIABLES avant de l'utiliser.
+
+⚠️  Le fichier Python n'a pas été généré.
+```
 
 ### 3. AST (Arbre Syntaxique Abstrait)
 **Fichier :** `AST.java`
@@ -379,9 +438,24 @@ Le compilateur détecte et signale les erreurs suivantes :
 - Parenthèse non fermée
 - Expression invalide
 
+### Erreurs sémantiques (NOUVEAU)
+- **Variable non déclarée** : utilisation d'une variable avant sa déclaration
+- **Variable déclarée deux fois** : doublon dans la section VARIABLES
+- **Incompatibilité de types** : affectation d'un TEXTE dans un ENTIER (ou inversement)
+- **Opération invalide** : utilisation de +, -, *, / avec des TEXTES
+
 **Exemple de message d'erreur :**
 ```
 ❌ Erreur de compilation: Mot-clé 'FINSI' attendu à la ligne 15, colonne 1
+```
+
+**Exemple d'erreur sémantique :**
+```
+❌ Erreur sémantique détectée:
+Analyse sémantique échouée avec 1 erreur(s):
+  1. Variable 'compteur' non déclarée. Déclarez-la dans la section VARIABLES.
+
+⚠️  Le fichier Python n'a pas été généré.
 ```
 
 ---

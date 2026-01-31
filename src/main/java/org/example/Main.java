@@ -15,8 +15,9 @@ import java.util.List;
  * 1. Lire le fichier source .pso (pseudo-code)
  * 2. Effectuer l'analyse lexicale (Lexer)
  * 3. Effectuer l'analyse syntaxique (Parser) et construire l'AST
- * 4. Générer le code Python (PythonGenerator)
- * 5. Écrire le résultat dans un fichier .py
+ * 4. Effectuer l'analyse sémantique (SemanticAnalyzer) - NOUVEAU
+ * 5. Générer le code Python (PythonGenerator)
+ * 6. Écrire le résultat dans un fichier .py
  */
 public class Main {
 
@@ -72,12 +73,27 @@ public class Main {
             System.out.println("   ✓ " + ast.getDeclarations().size() + " variable(s) déclarée(s)");
             System.out.println("   ✓ " + ast.getCorps().getInstructions().size() + " instruction(s) principale(s)");
 
-            // Étape 4: Génération du code Python
+            // Étape 4: Analyse sémantique (NOUVEAU)
+            System.out.println("🔬 Analyse sémantique en cours...");
+            SemanticAnalyzer analyseurSemantique = new SemanticAnalyzer();
+            try {
+                analyseurSemantique.analyser(ast);
+                System.out.println("   ✓ Aucune erreur sémantique détectée");
+                System.out.println("   ✓ Toutes les variables sont déclarées");
+                System.out.println("   ✓ Tous les types sont cohérents");
+            } catch (SemanticException e) {
+                System.err.println("❌ Erreur sémantique détectée:");
+                System.err.println(e.getMessage());
+                System.err.println("\n⚠️  Le fichier Python n'a pas été généré.");
+                System.exit(1);
+            }
+
+            // Étape 5: Génération du code Python
             System.out.println("🐍 Génération du code Python...");
             PythonGenerator generateur = new PythonGenerator();
             String codePython = generateur.generer(ast);
 
-            // Étape 5: Écrire le fichier Python
+            // Étape 6: Écrire le fichier Python
             String fichierSortie = fichierSource.replace(".pso", ".py");
             Path cheminSortie = Paths.get(fichierSortie);
             Files.writeString(cheminSortie, codePython);

@@ -1,0 +1,50 @@
+// Fichier de test VALIDE sémantiquement
+// Ce fichier doit passer l'analyse sémantique sans erreur
+
+ALGORITHME TestValide
+
+VARIABLES
+    age : ENTIER
+    nom : TEXTE
+    compteur : ENTIER
+    total : ENTIER
+    message : TEXTE
+
+DEBUT
+    // Affectations valides (ENTIER -> ENTIER)
+    age <- 25
+    compteur <- 0
+    total <- age + 10
+
+    // Affectations valides (TEXTE -> TEXTE)
+    nom <- "Alice"
+    message <- "Bienvenue"
+
+    // Opérations arithmétiques (tous ENTIERS)
+    total <- age * 2
+    total <- total + compteur - 1
+    total <- total / 5
+
+    // Lecture de variables déclarées
+    ECRIRE("Quel est votre nom ?")
+    LIRE(nom)
+    ECRIRE("Quel est votre âge ?")
+    LIRE(age)
+
+    // Structures de contrôle avec conditions valides
+    SI age > 18 ALORS
+        ECRIRE("Vous êtes majeur")
+    SINON
+        ECRIRE("Vous êtes mineur")
+    FINSI
+
+    // Boucle avec condition valide
+    compteur <- 1
+    TANTQUE compteur <= 5 FAIRE
+        ECRIRE("Tour numéro: ", compteur)
+        compteur <- compteur + 1
+    FINTANTQUE
+
+    // Affichage final
+    ECRIRE("Bonjour ", nom, " ! Vous avez ", age, " ans.")
+FIN

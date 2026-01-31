@@ -1,0 +1,30 @@
+// Fichier de test avec ERREURS sémantiques
+// Ce fichier est conçu pour tester l'analyseur sémantique
+
+ALGORITHME TestErreurs
+
+VARIABLES
+    x : ENTIER
+    nom : TEXTE
+    x : ENTIER           // ❌ ERREUR 1: Variable déclarée deux fois
+
+DEBUT
+    // ❌ ERREUR 2: Variable 'z' non déclarée
+    z <- 10
+
+    // ❌ ERREUR 3: Affectation de TEXTE dans ENTIER
+    x <- "Bonjour"
+
+    // ❌ ERREUR 4: Affectation de ENTIER dans TEXTE
+    nom <- 42
+
+    // ❌ ERREUR 5: Opération arithmétique avec TEXTE
+    x <- nom + 5
+
+    // ❌ ERREUR 6: Variable 'resultat' non déclarée
+    ECRIRE(resultat)
+
+    // Instruction valide (pour montrer que ça fonctionne aussi)
+    x <- 5
+    ECRIRE(x)
+FIN
