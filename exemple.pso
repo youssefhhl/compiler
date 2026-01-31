@@ -1,0 +1,78 @@
+// Exemple complet de pseudo-code français
+// Ce fichier démontre toutes les fonctionnalités du compilateur
+
+ALGORITHME ExempleComplet
+
+VARIABLES
+    x : ENTIER
+    y : ENTIER
+    somme : ENTIER
+    compteur : ENTIER
+    nom : TEXTE
+    resultat : ENTIER
+
+DEBUT
+    // Affichage simple
+    ECRIRE("=== Bienvenue dans le programme de démonstration ===")
+
+    // Lecture d'une chaîne de caractères
+    ECRIRE("Quel est votre nom ?")
+    LIRE(nom)
+    ECRIRE("Bonjour ", nom, " !")
+
+    // Affectation de valeurs
+    x <- 10
+    y <- 5
+
+    // Opérations arithmétiques
+    somme <- x + y
+    ECRIRE("La somme de ", x, " et ", y, " est: ", somme)
+
+    resultat <- x * y - 3
+    ECRIRE("Le résultat de x * y - 3 est: ", resultat)
+
+    // Structure conditionnelle SI/ALORS/SINON
+    ECRIRE("Entrez un nombre:")
+    LIRE(x)
+
+    SI x > 0 ALORS
+        ECRIRE("Le nombre est positif")
+    SINON
+        SI x < 0 ALORS
+            ECRIRE("Le nombre est négatif")
+        SINON
+            ECRIRE("Le nombre est zéro")
+        FINSI
+    FINSI
+
+    // Boucle TANTQUE
+    ECRIRE("Comptage de 1 à 5:")
+    compteur <- 1
+    TANTQUE compteur <= 5 FAIRE
+        ECRIRE("Compteur = ", compteur)
+        compteur <- compteur + 1
+    FINTANTQUE
+
+    // Comparaisons
+    SI x == y ALORS
+        ECRIRE("x est égal à y")
+    SINON
+        SI x > y ALORS
+            ECRIRE("x est supérieur à y")
+        SINON
+            ECRIRE("x est inférieur à y")
+        FINSI
+    FINSI
+
+    // Calcul de factorielle (exemple avec boucle)
+    ECRIRE("Calcul de factorielle de 5:")
+    resultat <- 1
+    compteur <- 1
+    TANTQUE compteur <= 5 FAIRE
+        resultat <- resultat * compteur
+        compteur <- compteur + 1
+    FINTANTQUE
+    ECRIRE("5! = ", resultat)
+
+    ECRIRE("=== Fin du programme ===")
+FIN
