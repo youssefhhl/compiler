@@ -10,39 +10,33 @@ import java.util.Map;
  * Transforme le code source en une liste de tokens.
  */
 public class Lexer {
-    private final String source;      // Le code source à analyser
-    private final List<Token> tokens; // Liste des tokens générés
-    private int position;             // Position actuelle dans le source
-    private int ligne;                // Ligne actuelle
-    private int colonne;              // Colonne actuelle
+    private final String source;
+    private final List<Token> tokens;
+    private int position;
+    private int ligne;
+    private int colonne;
 
-    // Table des mots-clés reconnus (en majuscules)
     private static final Map<String, TokenType> MOTS_CLES = new HashMap<>();
 
     static {
-        // Structure du programme
         MOTS_CLES.put("ALGORITHME", TokenType.ALGORITHME);
         MOTS_CLES.put("VARIABLES", TokenType.VARIABLES);
         MOTS_CLES.put("DEBUT", TokenType.DEBUT);
         MOTS_CLES.put("FIN", TokenType.FIN);
 
-        // Types
         MOTS_CLES.put("ENTIER", TokenType.ENTIER);
         MOTS_CLES.put("REEL", TokenType.REEL);
         MOTS_CLES.put("TEXTE", TokenType.TEXTE);
 
-        // E/S
         MOTS_CLES.put("ECRIRE", TokenType.ECRIRE);
-        MOTS_CLES.put("AFFICHER", TokenType.ECRIRE); // Alias
+        MOTS_CLES.put("AFFICHER", TokenType.ECRIRE);
         MOTS_CLES.put("LIRE", TokenType.LIRE);
 
-        // Conditions
         MOTS_CLES.put("SI", TokenType.SI);
         MOTS_CLES.put("ALORS", TokenType.ALORS);
         MOTS_CLES.put("SINON", TokenType.SINON);
         MOTS_CLES.put("FINSI", TokenType.FINSI);
 
-        // Boucles
         MOTS_CLES.put("TANTQUE", TokenType.TANTQUE);
         MOTS_CLES.put("FAIRE", TokenType.FAIRE);
         MOTS_CLES.put("FINTANTQUE", TokenType.FINTANTQUE);
@@ -51,7 +45,6 @@ public class Lexer {
         MOTS_CLES.put("A", TokenType.A);
         MOTS_CLES.put("FINPOUR", TokenType.FINPOUR);
 
-        // Opérateurs logiques
         MOTS_CLES.put("ET", TokenType.ET);
         MOTS_CLES.put("OU", TokenType.OU);
         MOTS_CLES.put("NON", TokenType.NON);
@@ -77,33 +70,27 @@ public class Lexer {
         while (!estFin()) {
             char c = caractereActuel();
 
-            // Ignorer les espaces et tabulations
             if (c == ' ' || c == '\t') {
                 avancer();
             }
-            // Nouvelle ligne
             else if (c == '\n') {
                 ajouterToken(TokenType.NOUVELLE_LIGNE, "\\n");
                 avancer();
                 ligne++;
                 colonne = 1;
             }
-            // Retour chariot (Windows)
             else if (c == '\r') {
                 avancer();
             }
-            // Commentaires (ligne commençant par //)
             else if (c == '/' && regarderSuivant() == '/') {
                 ignorerCommentaire();
             }
-            // Opérateur d'affectation <-
             else if (c == '<' && regarderSuivant() == '-') {
                 int col = colonne;
                 avancer();
                 avancer();
                 tokens.add(new Token(TokenType.AFFECTATION, "<-", ligne, col));
             }
-            // Opérateurs de comparaison
             else if (c == '<' && regarderSuivant() == '=') {
                 int col = colonne;
                 avancer();
@@ -128,7 +115,6 @@ public class Lexer {
                 avancer();
                 tokens.add(new Token(TokenType.DIFFERENT, "!=", ligne, col));
             }
-            // Opérateurs simples
             else if (c == '<') {
                 ajouterToken(TokenType.INFERIEUR, "<");
                 avancer();
@@ -157,7 +143,6 @@ public class Lexer {
                 ajouterToken(TokenType.MODULO, "%");
                 avancer();
             }
-            // Ponctuation
             else if (c == '(') {
                 ajouterToken(TokenType.PARENTHESE_G, "(");
                 avancer();
@@ -174,26 +159,21 @@ public class Lexer {
                 ajouterToken(TokenType.VIRGULE, ",");
                 avancer();
             }
-            // Chaînes de caractères
             else if (c == '"') {
                 lireChaine();
             }
-            // Nombres
             else if (Character.isDigit(c)) {
                 lireNombre();
             }
-            // Identifiants et mots-clés
             else if (Character.isLetter(c) || c == '_') {
                 lireIdentifiant();
             }
-            // Caractère non reconnu
             else {
                 throw new RuntimeException("Caractère non reconnu '" + c + "' à la ligne "
                         + ligne + ", colonne " + colonne);
             }
         }
 
-        // Ajouter le token de fin de fichier
         tokens.add(new Token(TokenType.EOF, "", ligne, colonne));
         return tokens;
     }
@@ -250,7 +230,7 @@ public class Lexer {
      */
     private void lireChaine() {
         int colonneDebut = colonne;
-        avancer(); // Sauter le guillemet ouvrant
+        avancer();
 
         StringBuilder sb = new StringBuilder();
         while (!estFin() && caractereActuel() != '"') {
@@ -265,7 +245,7 @@ public class Lexer {
             throw new RuntimeException("Chaîne non terminée à la ligne " + ligne);
         }
 
-        avancer(); // Sauter le guillemet fermant
+        avancer();
         tokens.add(new Token(TokenType.CHAINE, sb.toString(), ligne, colonneDebut));
     }
 
@@ -277,19 +257,15 @@ public class Lexer {
         int colonneDebut = colonne;
         StringBuilder sb = new StringBuilder();
 
-        // Lire la partie entière
         while (!estFin() && Character.isDigit(caractereActuel())) {
             sb.append(caractereActuel());
             avancer();
         }
 
-        // Vérifier s'il y a une partie décimale
         if (!estFin() && caractereActuel() == '.' && regarderSuivant() != '\0' && Character.isDigit(regarderSuivant())) {
-            // C'est un nombre réel
-            sb.append(caractereActuel()); // Ajouter le point
+            sb.append(caractereActuel());
             avancer();
 
-            // Lire la partie décimale
             while (!estFin() && Character.isDigit(caractereActuel())) {
                 sb.append(caractereActuel());
                 avancer();
@@ -297,7 +273,6 @@ public class Lexer {
 
             tokens.add(new Token(TokenType.NOMBRE_REEL, sb.toString(), ligne, colonneDebut));
         } else {
-            // C'est un nombre entier
             tokens.add(new Token(TokenType.NOMBRE, sb.toString(), ligne, colonneDebut));
         }
     }
@@ -318,10 +293,8 @@ public class Lexer {
         String mot = sb.toString();
         String motMajuscule = mot.toUpperCase();
 
-        // Vérifier si c'est un mot-clé
         TokenType type = MOTS_CLES.getOrDefault(motMajuscule, TokenType.IDENTIFIANT);
 
-        // Pour les identifiants, conserver la casse originale
         String valeur = (type == TokenType.IDENTIFIANT) ? mot : motMajuscule;
 
         tokens.add(new Token(type, valeur, ligne, colonneDebut));

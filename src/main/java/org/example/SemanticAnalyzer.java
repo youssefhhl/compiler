@@ -18,9 +18,9 @@ import java.util.List;
  */
 public class SemanticAnalyzer {
 
-    private final SymbolTable tableSymboles;    // Table des symboles
-    private final List<String> erreurs;          // Liste des erreurs détectées
-    private int ligneActuelle;                   // Ligne actuelle (pour les messages)
+    private final SymbolTable tableSymboles;
+    private final List<String> erreurs;
+    private int ligneActuelle;
 
     /**
      * Constructeur - initialise l'analyseur avec une table de symboles vide.
@@ -40,16 +40,12 @@ public class SemanticAnalyzer {
     public void analyser(AST.ProgrammeNode programme) throws SemanticException {
         erreurs.clear();
 
-        // Étape 1 : Enregistrer toutes les déclarations dans la table des symboles
-        // (Cela détecte aussi les doublons)
         for (AST.DeclarationNode declaration : programme.getDeclarations()) {
             analyserDeclaration(declaration);
         }
 
-        // Étape 2 : Analyser le corps du programme
         analyserBloc(programme.getCorps());
 
-        // Étape 3 : Si des erreurs ont été collectées, les signaler
         if (!erreurs.isEmpty()) {
             StringBuilder message = new StringBuilder();
             message.append("Analyse sémantique échouée avec ").append(erreurs.size()).append(" erreur(s):\n");
@@ -103,7 +99,6 @@ public class SemanticAnalyzer {
         } else if (instruction instanceof AST.LireNode lire) {
             analyserLire(lire);
         }
-        // Les autres types de nœuds (expressions) sont analysés dans leur contexte
     }
 
     /**
@@ -115,14 +110,12 @@ public class SemanticAnalyzer {
     private void analyserAffectation(AST.AffectationNode affectation) {
         String nomVariable = affectation.getVariable();
 
-        // Vérifier que la variable cible est déclarée
         if (!tableSymboles.existe(nomVariable)) {
             erreurs.add("Variable '" + nomVariable + "' non déclarée. " +
                        "Déclarez-la dans la section VARIABLES avant de l'utiliser.");
             return;
         }
 
-        // Récupérer le type de la variable cible
         SymbolTable.TypeDonnee typeCible;
         try {
             typeCible = tableSymboles.getType(nomVariable, ligneActuelle);
@@ -131,10 +124,8 @@ public class SemanticAnalyzer {
             return;
         }
 
-        // Déterminer le type de l'expression
         SymbolTable.TypeDonnee typeExpression = determinerTypeExpression(affectation.getValeur());
 
-        // Vérifier la compatibilité des types (si on a pu déterminer le type)
         if (typeExpression != null && typeCible != typeExpression) {
             erreurs.add("Incompatibilité de types: impossible d'affecter un " +
                        typeExpression + " à la variable '" + nomVariable + "' de type " + typeCible + ".");
@@ -145,13 +136,10 @@ public class SemanticAnalyzer {
      * Analyse une structure conditionnelle SI/ALORS/SINON.
      */
     private void analyserSi(AST.SiNode si) {
-        // Analyser la condition
         analyserCondition(si.getCondition());
 
-        // Analyser le bloc ALORS
         analyserBloc(si.getBlocAlors());
 
-        // Analyser le bloc SINON s'il existe
         if (si.getBlocSinon() != null) {
             analyserBloc(si.getBlocSinon());
         }
@@ -161,10 +149,8 @@ public class SemanticAnalyzer {
      * Analyse une boucle TANTQUE.
      */
     private void analyserTantQue(AST.TantQueNode tantQue) {
-        // Analyser la condition
         analyserCondition(tantQue.getCondition());
 
-        // Analyser le corps de la boucle
         analyserBloc(tantQue.getCorps());
     }
 
@@ -178,7 +164,6 @@ public class SemanticAnalyzer {
     private void analyserPour(AST.PourNode pour) {
         String variable = pour.getVariable();
 
-        // Vérifier que les expressions de début et fin sont numériques (ENTIER ou REEL)
         SymbolTable.TypeDonnee typeDebut = determinerTypeExpression(pour.getDebut());
         SymbolTable.TypeDonnee typeFin = determinerTypeExpression(pour.getFin());
 
@@ -196,11 +181,9 @@ public class SemanticAnalyzer {
                        "Type trouvé: " + typeFin + ".");
         }
 
-        // Vérifier que toutes les variables utilisées dans les expressions existent
         verifierVariablesExistent(pour.getDebut());
         verifierVariablesExistent(pour.getFin());
 
-        // Analyser le corps de la boucle
         analyserBloc(pour.getCorps());
     }
 
@@ -208,19 +191,15 @@ public class SemanticAnalyzer {
      * Analyse une condition (expression de comparaison).
      */
     private void analyserCondition(AST.Node condition) {
-        // Vérifier que toutes les variables utilisées existent
         verifierVariablesExistent(condition);
 
-        // Si c'est une expression binaire de comparaison, vérifier les types
         if (condition instanceof AST.ExpressionBinaire expr) {
             String op = expr.getOperateur();
 
-            // Pour les comparaisons numériques (>, <, >=, <=), les deux côtés doivent être des nombres
             if (op.equals(">") || op.equals("<") || op.equals(">=") || op.equals("<=")) {
                 SymbolTable.TypeDonnee typeGauche = determinerTypeExpression(expr.getGauche());
                 SymbolTable.TypeDonnee typeDroite = determinerTypeExpression(expr.getDroite());
 
-                // Vérifier que les deux côtés sont des nombres (ENTIER ou REEL)
                 boolean gauche_numeric = typeGauche != null &&
                     (typeGauche == SymbolTable.TypeDonnee.ENTIER || typeGauche == SymbolTable.TypeDonnee.REEL);
                 boolean droite_numeric = typeDroite != null &&
@@ -269,19 +248,15 @@ public class SemanticAnalyzer {
      */
     private SymbolTable.TypeDonnee determinerTypeExpression(AST.Node expression) {
         if (expression instanceof AST.NombreNode) {
-            // Un nombre littéral entier est un ENTIER
             return SymbolTable.TypeDonnee.ENTIER;
 
         } else if (expression instanceof AST.NombreReelNode) {
-            // Un nombre littéral réel est un REEL
             return SymbolTable.TypeDonnee.REEL;
 
         } else if (expression instanceof AST.ChaineNode) {
-            // Une chaîne littérale est un TEXTE
             return SymbolTable.TypeDonnee.TEXTE;
 
         } else if (expression instanceof AST.IdentifiantNode identifiant) {
-            // Pour un identifiant, on récupère son type dans la table des symboles
             String nom = identifiant.getNom();
             if (tableSymboles.existe(nom)) {
                 try {
@@ -290,16 +265,13 @@ public class SemanticAnalyzer {
                     return null;
                 }
             } else {
-                // La variable n'existe pas - l'erreur sera signalée ailleurs
                 return null;
             }
 
         } else if (expression instanceof AST.ExpressionBinaire expr) {
-            // Pour une expression binaire, analyser selon l'opérateur
             return analyserExpressionBinaire(expr);
 
         } else if (expression instanceof AST.ExpressionUnaire expr) {
-            // Pour une expression unaire (NON), analyser l'opérande
             return analyserExpressionUnaire(expr);
         }
 
@@ -315,15 +287,12 @@ public class SemanticAnalyzer {
         SymbolTable.TypeDonnee typeGauche = determinerTypeExpression(expr.getGauche());
         SymbolTable.TypeDonnee typeDroite = determinerTypeExpression(expr.getDroite());
 
-        // Vérifier que les variables utilisées existent
         verifierVariablesExistent(expr.getGauche());
         verifierVariablesExistent(expr.getDroite());
 
-        // Opérateurs arithmétiques : +, -, *, /, %
         if (operateur.equals("+") || operateur.equals("-") ||
             operateur.equals("*") || operateur.equals("/") || operateur.equals("%")) {
 
-            // Les opérateurs arithmétiques fonctionnent avec ENTIER et REEL
             boolean gauche_numeric = typeGauche != null &&
                 (typeGauche == SymbolTable.TypeDonnee.ENTIER || typeGauche == SymbolTable.TypeDonnee.REEL);
             boolean droite_numeric = typeDroite != null &&
@@ -338,9 +307,6 @@ public class SemanticAnalyzer {
                            "L'opérande droite est de type " + typeDroite + ".");
             }
 
-            // Le résultat dépend des types des opérandes
-            // Si l'un des deux est REEL, le résultat est REEL
-            // Sinon, le résultat est ENTIER
             if (typeGauche == SymbolTable.TypeDonnee.REEL || typeDroite == SymbolTable.TypeDonnee.REEL) {
                 return SymbolTable.TypeDonnee.REEL;
             } else {
@@ -348,11 +314,9 @@ public class SemanticAnalyzer {
             }
         }
 
-        // Opérateurs de comparaison : >, <, >=, <=
         if (operateur.equals(">") || operateur.equals("<") ||
             operateur.equals(">=") || operateur.equals("<=")) {
 
-            // Les comparaisons numériques nécessitent des nombres (ENTIER ou REEL) des deux côtés
             boolean gauche_numeric = typeGauche != null &&
                 (typeGauche == SymbolTable.TypeDonnee.ENTIER || typeGauche == SymbolTable.TypeDonnee.REEL);
             boolean droite_numeric = typeDroite != null &&
@@ -367,30 +331,23 @@ public class SemanticAnalyzer {
                            "L'opérande droite est de type " + typeDroite + ".");
             }
 
-            // Le résultat d'une comparaison est un booléen (traité comme ENTIER)
             return SymbolTable.TypeDonnee.ENTIER;
         }
 
-        // Opérateurs d'égalité : ==, !=
         if (operateur.equals("==") || operateur.equals("!=")) {
-            // Les deux opérandes doivent être du même type
             if (typeGauche != null && typeDroite != null && typeGauche != typeDroite) {
                 erreurs.add("L'opérateur '" + operateur + "' compare des types différents: " +
                            typeGauche + " et " + typeDroite + ".");
             }
 
-            return SymbolTable.TypeDonnee.ENTIER; // Résultat booléen traité comme entier
+            return SymbolTable.TypeDonnee.ENTIER;
         }
 
-        // Opérateurs logiques : ET, OU
         if (operateur.equals("ET") || operateur.equals("OU")) {
-            // Les opérateurs logiques acceptent des conditions (résultats de comparaisons)
-            // On ne fait pas de vérification stricte du type ici
-            // Les deux opérandes sont des conditions booléennes
-            return SymbolTable.TypeDonnee.ENTIER; // Traité comme un booléen (entier)
+            return SymbolTable.TypeDonnee.ENTIER;
         }
 
-        return typeGauche; // Par défaut, retourner le type de gauche
+        return typeGauche;
     }
 
     /**
@@ -400,13 +357,9 @@ public class SemanticAnalyzer {
     private SymbolTable.TypeDonnee analyserExpressionUnaire(AST.ExpressionUnaire expr) {
         String operateur = expr.getOperateur();
 
-        // Vérifier que toutes les variables utilisées existent
         verifierVariablesExistent(expr.getOperande());
 
-        // Opérateur NON
         if (operateur.equals("NON")) {
-            // NON accepte une expression booléenne (résultat de comparaison, etc.)
-            // Le résultat est un booléen (traité comme ENTIER)
             return SymbolTable.TypeDonnee.ENTIER;
         }
 
@@ -425,15 +378,12 @@ public class SemanticAnalyzer {
             }
 
         } else if (expression instanceof AST.ExpressionBinaire expr) {
-            // Vérifier récursivement les deux côtés
             verifierVariablesExistent(expr.getGauche());
             verifierVariablesExistent(expr.getDroite());
 
         } else if (expression instanceof AST.ExpressionUnaire expr) {
-            // Vérifier récursivement l'opérande
             verifierVariablesExistent(expr.getOperande());
         }
-        // Pour NombreNode et ChaineNode, rien à vérifier
     }
 
     /**
