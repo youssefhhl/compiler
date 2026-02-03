@@ -27,10 +27,13 @@ public class AST {
         void visiter(AffectationNode node);
         void visiter(SiNode node);
         void visiter(TantQueNode node);
+        void visiter(PourNode node);
         void visiter(EcrireNode node);
         void visiter(LireNode node);
         void visiter(ExpressionBinaire node);
+        void visiter(ExpressionUnaire node);
         void visiter(NombreNode node);
+        void visiter(NombreReelNode node);
         void visiter(ChaineNode node);
         void visiter(IdentifiantNode node);
     }
@@ -179,6 +182,34 @@ public class AST {
     }
 
     /**
+     * Nœud représentant une boucle POUR.
+     * Ex: POUR i DE 1 A 10 FAIRE ... FINPOUR
+     */
+    public static class PourNode extends Node {
+        private final String variable;   // Variable de boucle (i)
+        private final Node debut;        // Expression de début (1)
+        private final Node fin;          // Expression de fin (10)
+        private final BlockNode corps;   // Corps de la boucle
+
+        public PourNode(String variable, Node debut, Node fin, BlockNode corps) {
+            this.variable = variable;
+            this.debut = debut;
+            this.fin = fin;
+            this.corps = corps;
+        }
+
+        public String getVariable() { return variable; }
+        public Node getDebut() { return debut; }
+        public Node getFin() { return fin; }
+        public BlockNode getCorps() { return corps; }
+
+        @Override
+        public void accepter(NodeVisitor visiteur) {
+            visiteur.visiter(this);
+        }
+    }
+
+    /**
      * Nœud représentant une instruction ECRIRE (affichage).
      */
     public static class EcrireNode extends Node {
@@ -218,11 +249,11 @@ public class AST {
 
     /**
      * Nœud représentant une expression binaire (opération entre deux opérandes).
-     * Ex: x + 5, a > b
+     * Ex: x + 5, a > b, a ET b, a OU b
      */
     public static class ExpressionBinaire extends Node {
         private final Node gauche;       // Opérande gauche
-        private final String operateur;  // Opérateur (+, -, *, /, >, <, ==, etc.)
+        private final String operateur;  // Opérateur (+, -, *, /, >, <, ==, ET, OU, etc.)
         private final Node droite;       // Opérande droite
 
         public ExpressionBinaire(Node gauche, String operateur, Node droite) {
@@ -242,7 +273,29 @@ public class AST {
     }
 
     /**
-     * Nœud représentant un nombre littéral.
+     * Nœud représentant une expression unaire (opération sur un seul opérande).
+     * Ex: NON condition
+     */
+    public static class ExpressionUnaire extends Node {
+        private final String operateur;  // Opérateur (NON)
+        private final Node operande;     // Opérande
+
+        public ExpressionUnaire(String operateur, Node operande) {
+            this.operateur = operateur;
+            this.operande = operande;
+        }
+
+        public String getOperateur() { return operateur; }
+        public Node getOperande() { return operande; }
+
+        @Override
+        public void accepter(NodeVisitor visiteur) {
+            visiteur.visiter(this);
+        }
+    }
+
+    /**
+     * Nœud représentant un nombre littéral (entier).
      */
     public static class NombreNode extends Node {
         private final int valeur;
@@ -252,6 +305,24 @@ public class AST {
         }
 
         public int getValeur() { return valeur; }
+
+        @Override
+        public void accepter(NodeVisitor visiteur) {
+            visiteur.visiter(this);
+        }
+    }
+
+    /**
+     * Nœud représentant un nombre réel littéral (floating-point).
+     */
+    public static class NombreReelNode extends Node {
+        private final double valeur;
+
+        public NombreReelNode(double valeur) {
+            this.valeur = valeur;
+        }
+
+        public double getValeur() { return valeur; }
 
         @Override
         public void accepter(NodeVisitor visiteur) {

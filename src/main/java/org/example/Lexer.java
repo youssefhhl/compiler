@@ -28,6 +28,7 @@ public class Lexer {
 
         // Types
         MOTS_CLES.put("ENTIER", TokenType.ENTIER);
+        MOTS_CLES.put("REEL", TokenType.REEL);
         MOTS_CLES.put("TEXTE", TokenType.TEXTE);
 
         // E/S
@@ -45,6 +46,15 @@ public class Lexer {
         MOTS_CLES.put("TANTQUE", TokenType.TANTQUE);
         MOTS_CLES.put("FAIRE", TokenType.FAIRE);
         MOTS_CLES.put("FINTANTQUE", TokenType.FINTANTQUE);
+        MOTS_CLES.put("POUR", TokenType.POUR);
+        MOTS_CLES.put("DE", TokenType.DE);
+        MOTS_CLES.put("A", TokenType.A);
+        MOTS_CLES.put("FINPOUR", TokenType.FINPOUR);
+
+        // Opérateurs logiques
+        MOTS_CLES.put("ET", TokenType.ET);
+        MOTS_CLES.put("OU", TokenType.OU);
+        MOTS_CLES.put("NON", TokenType.NON);
     }
 
     /**
@@ -141,6 +151,10 @@ public class Lexer {
             }
             else if (c == '/') {
                 ajouterToken(TokenType.DIVISE, "/");
+                avancer();
+            }
+            else if (c == '%') {
+                ajouterToken(TokenType.MODULO, "%");
                 avancer();
             }
             // Ponctuation
@@ -256,18 +270,36 @@ public class Lexer {
     }
 
     /**
-     * Lit un nombre entier.
+     * Lit un nombre entier ou réel (floating-point).
+     * Détecte la présence d'un point décimal pour distinguer NOMBRE et NOMBRE_REEL.
      */
     private void lireNombre() {
         int colonneDebut = colonne;
         StringBuilder sb = new StringBuilder();
 
+        // Lire la partie entière
         while (!estFin() && Character.isDigit(caractereActuel())) {
             sb.append(caractereActuel());
             avancer();
         }
 
-        tokens.add(new Token(TokenType.NOMBRE, sb.toString(), ligne, colonneDebut));
+        // Vérifier s'il y a une partie décimale
+        if (!estFin() && caractereActuel() == '.' && regarderSuivant() != '\0' && Character.isDigit(regarderSuivant())) {
+            // C'est un nombre réel
+            sb.append(caractereActuel()); // Ajouter le point
+            avancer();
+
+            // Lire la partie décimale
+            while (!estFin() && Character.isDigit(caractereActuel())) {
+                sb.append(caractereActuel());
+                avancer();
+            }
+
+            tokens.add(new Token(TokenType.NOMBRE_REEL, sb.toString(), ligne, colonneDebut));
+        } else {
+            // C'est un nombre entier
+            tokens.add(new Token(TokenType.NOMBRE, sb.toString(), ligne, colonneDebut));
+        }
     }
 
     /**

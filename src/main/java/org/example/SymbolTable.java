@@ -20,6 +20,7 @@ public class SymbolTable {
      */
     public enum TypeDonnee {
         ENTIER,  // Nombre entier
+        REEL,    // Nombre réel (floating-point)
         TEXTE    // Chaîne de caractères
     }
 
@@ -120,7 +121,7 @@ public class SymbolTable {
     }
 
     /**
-     * Convertit une chaîne de type ("ENTIER", "TEXTE") en TypeDonnee.
+     * Convertit une chaîne de type ("ENTIER", "REEL", "TEXTE") en TypeDonnee.
      *
      * @param type La chaîne représentant le type
      * @param ligne Numéro de ligne pour le message d'erreur
@@ -130,9 +131,10 @@ public class SymbolTable {
     private TypeDonnee convertirType(String type, int ligne) throws SemanticException {
         return switch (type.toUpperCase()) {
             case "ENTIER" -> TypeDonnee.ENTIER;
+            case "REEL" -> TypeDonnee.REEL;
             case "TEXTE" -> TypeDonnee.TEXTE;
             default -> throw new SemanticException(
-                "Type inconnu '" + type + "'. Types valides: ENTIER, TEXTE.",
+                "Type inconnu '" + type + "'. Types valides: ENTIER, REEL, TEXTE.",
                 ligne
             );
         };

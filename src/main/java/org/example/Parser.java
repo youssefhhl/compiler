@@ -172,11 +172,14 @@ public class Parser {
         if (verifier(TokenType.ENTIER)) {
             type = "ENTIER";
             avancer();
+        } else if (verifier(TokenType.REEL)) {
+            type = "REEL";
+            avancer();
         } else if (verifier(TokenType.TEXTE)) {
             type = "TEXTE";
             avancer();
         } else {
-            throw new RuntimeException("Type attendu (ENTIER ou TEXTE) à la ligne "
+            throw new RuntimeException("Type attendu (ENTIER, REEL ou TEXTE) à la ligne "
                     + tokenActuel().getLigne());
         }
 
@@ -197,6 +200,7 @@ public class Parser {
                !verifier(TokenType.SINON) &&
                !verifier(TokenType.FINSI) &&
                !verifier(TokenType.FINTANTQUE) &&
+               !verifier(TokenType.FINPOUR) &&
                !verifier(TokenType.EOF)) {
 
             AST.Node instruction = parseInstruction();
@@ -211,7 +215,7 @@ public class Parser {
 
     /**
      * Parse une instruction unique.
-     * instruction -> affectation | si | tantque | ecrire | lire
+     * instruction -> affectation | si | tantque | pour | ecrire | lire
      */
     private AST.Node parseInstruction() {
         ignorerNouvellesLignes();
@@ -224,6 +228,11 @@ public class Parser {
         // TANTQUE -> Boucle while
         if (verifier(TokenType.TANTQUE)) {
             return parseTantQue();
+        }
+
+        // POUR -> Boucle for
+        if (verifier(TokenType.POUR)) {
+            return parsePour();
         }
 
         // ECRIRE -> Affichage
@@ -246,7 +255,8 @@ public class Parser {
         if (t.getType() != TokenType.EOF &&
             t.getType() != TokenType.FIN &&
             t.getType() != TokenType.FINSI &&
-            t.getType() != TokenType.FINTANTQUE) {
+            t.getType() != TokenType.FINTANTQUE &&
+            t.getType() != TokenType.FINPOUR) {
             throw new RuntimeException("Instruction inattendue: " + t.getValeur()
                     + " à la ligne " + t.getLigne());
         }
@@ -314,6 +324,36 @@ public class Parser {
     }
 
     /**
+     * Parse une boucle POUR.
+     * pour -> POUR identifiant DE expression A expression FAIRE instructions FINPOUR
+     */
+    private AST.PourNode parsePour() {
+        consommer(TokenType.POUR, "Mot-clé 'POUR' attendu");
+
+        // Parser la variable de boucle
+        String variable = consommer(TokenType.IDENTIFIANT, "Nom de variable attendu").getValeur();
+
+        consommer(TokenType.DE, "Mot-clé 'DE' attendu après le nom de variable");
+
+        // Parser l'expression de début
+        AST.Node debut = parseExpression();
+
+        consommer(TokenType.A, "Mot-clé 'A' attendu après l'expression de début");
+
+        // Parser l'expression de fin
+        AST.Node fin = parseExpression();
+
+        consommer(TokenType.FAIRE, "Mot-clé 'FAIRE' attendu après l'expression de fin");
+
+        // Parser le corps de la boucle
+        AST.BlockNode corps = parseInstructions();
+
+        consommer(TokenType.FINPOUR, "Mot-clé 'FINPOUR' attendu");
+
+        return new AST.PourNode(variable, debut, fin, corps);
+    }
+
+    /**
      * Parse une instruction ECRIRE.
      * ecrire -> ECRIRE ( expression (, expression)* )
      */
@@ -353,10 +393,55 @@ public class Parser {
     // ==================== EXPRESSIONS ====================
 
     /**
-     * Parse une condition (expression avec opérateurs de comparaison).
-     * condition -> expression (op_comparaison expression)?
+     * Parse une condition (expression avec opérateurs logiques et de comparaison).
+     * condition -> disjunction
+     * disjunction -> conjunction (OU conjunction)*
+     * conjunction -> comparaison (ET comparaison)*
+     * comparaison -> expression (op_comparaison expression)?
      */
     private AST.Node parseCondition() {
+        return parseDisjunction();
+    }
+
+    /**
+     * Disjonction (OU) - lowest precedence of logical operators
+     * disjunction -> conjunction (OU conjunction)*
+     */
+    private AST.Node parseDisjunction() {
+        AST.Node gauche = parseConjunction();
+
+        while (verifier(TokenType.OU)) {
+            String operateur = tokenActuel().getValeur();
+            avancer();
+            AST.Node droite = parseConjunction();
+            gauche = new AST.ExpressionBinaire(gauche, operateur, droite);
+        }
+
+        return gauche;
+    }
+
+    /**
+     * Conjonction (ET) - higher precedence than OU
+     * conjunction -> comparaison (ET comparaison)*
+     */
+    private AST.Node parseConjunction() {
+        AST.Node gauche = parseComparaison();
+
+        while (verifier(TokenType.ET)) {
+            String operateur = tokenActuel().getValeur();
+            avancer();
+            AST.Node droite = parseComparaison();
+            gauche = new AST.ExpressionBinaire(gauche, operateur, droite);
+        }
+
+        return gauche;
+    }
+
+    /**
+     * Comparaison (>, <, ==, !=, >=, <=)
+     * comparaison -> expression (op_comparaison expression)?
+     */
+    private AST.Node parseComparaison() {
         AST.Node gauche = parseExpression();
 
         // Vérifier s'il y a un opérateur de comparaison
@@ -392,13 +477,13 @@ public class Parser {
     }
 
     /**
-     * Parse un terme (multiplication et division).
-     * terme -> facteur ((* | /) facteur)*
+     * Parse un terme (multiplication, division et modulo).
+     * terme -> facteur ((* | / | %) facteur)*
      */
     private AST.Node parseTerme() {
         AST.Node gauche = parseFacteur();
 
-        while (verifier(TokenType.MULTIPLIE) || verifier(TokenType.DIVISE)) {
+        while (verifier(TokenType.MULTIPLIE) || verifier(TokenType.DIVISE) || verifier(TokenType.MODULO)) {
             String operateur = tokenActuel().getValeur();
             avancer();
             AST.Node droite = parseFacteur();
@@ -410,14 +495,29 @@ public class Parser {
 
     /**
      * Parse un facteur (élément de base d'une expression).
-     * facteur -> nombre | chaine | identifiant | ( expression )
+     * facteur -> NON facteur | nombre | nombre_reel | chaine | identifiant | ( condition )
      */
     private AST.Node parseFacteur() {
-        // Nombre littéral
+        // Opérateur unaire NON (NOT)
+        if (verifier(TokenType.NON)) {
+            String operateur = tokenActuel().getValeur();
+            avancer();
+            AST.Node operande = parseFacteur(); // Récursion pour gérer NON NON x
+            return new AST.ExpressionUnaire(operateur, operande);
+        }
+
+        // Nombre entier littéral
         if (verifier(TokenType.NOMBRE)) {
             int valeur = Integer.parseInt(tokenActuel().getValeur());
             avancer();
             return new AST.NombreNode(valeur);
+        }
+
+        // Nombre réel littéral (floating-point)
+        if (verifier(TokenType.NOMBRE_REEL)) {
+            double valeur = Double.parseDouble(tokenActuel().getValeur());
+            avancer();
+            return new AST.NombreReelNode(valeur);
         }
 
         // Chaîne de caractères
@@ -434,10 +534,10 @@ public class Parser {
             return new AST.IdentifiantNode(nom);
         }
 
-        // Expression parenthésée
+        // Expression parenthésée - peut être une condition complète
         if (verifier(TokenType.PARENTHESE_G)) {
             avancer(); // Consommer (
-            AST.Node expression = parseExpression();
+            AST.Node expression = parseCondition(); // Utiliser parseCondition pour permettre les opérateurs logiques
             consommer(TokenType.PARENTHESE_D, "')' attendu");
             return expression;
         }

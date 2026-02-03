@@ -1,0 +1,47 @@
+ALGORITHME TestFloatAndModulo
+
+VARIABLES
+    x: ENTIER
+    y: ENTIER
+    a: REEL
+    b: REEL
+    result: REEL
+
+DEBUT
+    // Test ENTIER with modulo operator
+    x <- 17
+    y <- 5
+    ECRIRE("x = ", x, ", y = ", y)
+    ECRIRE("x % y = ", (x % y))
+
+    // Test REEL variables and arithmetic
+    a <- 3.14
+    b <- 2.5
+    ECRIRE("a = ", a, ", b = ", b)
+    ECRIRE("a + b = ", (a + b))
+    ECRIRE("a - b = ", (a - b))
+    ECRIRE("a * b = ", (a * b))
+    ECRIRE("a / b = ", (a / b))
+
+    // Test mixing ENTIER and REEL
+    result <- (x + a)
+    ECRIRE("x + a = ", result)
+
+    result <- (y * b)
+    ECRIRE("y * b = ", result)
+
+    // Test comparisons with REEL
+    SI (a > b) ALORS
+        ECRIRE("a est plus grand que b")
+    FINSI
+
+    SI (a == 3.14) ALORS
+        ECRIRE("a est exactement 3.14")
+    FINSI
+
+    // Test modulo with different values
+    ECRIRE("20 % 3 = ", (20 % 3))
+    ECRIRE("10 % 4 = ", (10 % 4))
+    ECRIRE("7 % 7 = ", (7 % 7))
+
+FIN

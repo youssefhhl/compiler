@@ -13,6 +13,7 @@ public enum TokenType {
 
     // Types de données
     ENTIER,         // Type entier
+    REEL,           // Type réel (floating-point)
     TEXTE,          // Type chaîne de caractères
 
     // Entrées/Sorties
@@ -29,6 +30,10 @@ public enum TokenType {
     TANTQUE,        // Boucle while
     FAIRE,          // Début du bloc de boucle
     FINTANTQUE,     // Fin de la boucle
+    POUR,           // Boucle for
+    DE,             // De (from) in for loop
+    A,              // À (to) in for loop
+    FINPOUR,        // Fin de la boucle for
 
     // Opérateurs
     AFFECTATION,    // <- (affectation)
@@ -36,12 +41,18 @@ public enum TokenType {
     MOINS,          // -
     MULTIPLIE,      // *
     DIVISE,         // /
+    MODULO,         // % (remainder)
     SUPERIEUR,      // >
     INFERIEUR,      // <
     EGAL,           // ==
     DIFFERENT,      // !=
     SUP_EGAL,       // >=
     INF_EGAL,       // <=
+
+    // Opérateurs logiques
+    ET,             // AND (logical AND)
+    OU,             // OR (logical OR)
+    NON,            // NOT (logical NOT)
 
     // Ponctuation
     PARENTHESE_G,   // (
@@ -52,6 +63,7 @@ public enum TokenType {
     // Littéraux et identifiants
     IDENTIFIANT,    // Nom de variable
     NOMBRE,         // Nombre entier
+    NOMBRE_REEL,    // Nombre réel (floating-point)
     CHAINE,         // Chaîne de caractères entre guillemets
 
     // Spéciaux

@@ -21,13 +21,16 @@ public class PythonGenerator implements AST.NodeVisitor {
     private int niveauIndentation;           // Niveau d'indentation actuel
     private static final String INDENT = "    "; // 4 espaces
 
-    // Ensemble des variables déclarées comme ENTIER (pour savoir si on doit convertir l'input)
+    // Ensemble des variables déclarées comme ENTIER (pour savoir si on doit convertir l'input en int)
     private final Set<String> variablesEntieres;
+    // Ensemble des variables déclarées comme REEL (pour savoir si on doit convertir l'input en float)
+    private final Set<String> variablesReelles;
 
     public PythonGenerator() {
         this.code = new StringBuilder();
         this.niveauIndentation = 0;
         this.variablesEntieres = new HashSet<>();
+        this.variablesReelles = new HashSet<>();
     }
 
     /**
@@ -44,6 +47,8 @@ public class PythonGenerator implements AST.NodeVisitor {
         for (AST.DeclarationNode decl : programme.getDeclarations()) {
             if (decl.getType().equals("ENTIER")) {
                 variablesEntieres.add(decl.getNom());
+            } else if (decl.getType().equals("REEL")) {
+                variablesReelles.add(decl.getNom());
             }
         }
 
@@ -71,6 +76,9 @@ public class PythonGenerator implements AST.NodeVisitor {
         if (expression instanceof AST.NombreNode nombre) {
             return String.valueOf(nombre.getValeur());
         }
+        else if (expression instanceof AST.NombreReelNode nombreReel) {
+            return String.valueOf(nombreReel.getValeur());
+        }
         else if (expression instanceof AST.ChaineNode chaine) {
             // Échapper les guillemets dans la chaîne
             String valeurEchappee = chaine.getValeur().replace("\"", "\\\"");
@@ -84,10 +92,27 @@ public class PythonGenerator implements AST.NodeVisitor {
             String droite = genererExpression(binaire.getDroite());
             String operateur = binaire.getOperateur();
 
-            // Conversion de l'opérateur si nécessaire
-            // (les opérateurs Python sont les mêmes que ceux du pseudo-code)
+            // Conversion des opérateurs logiques du pseudo-code vers Python
+            String operateurPython = operateur;
+            if (operateur.equals("ET")) {
+                operateurPython = "and";
+            } else if (operateur.equals("OU")) {
+                operateurPython = "or";
+            }
 
-            return "(" + gauche + " " + operateur + " " + droite + ")";
+            return "(" + gauche + " " + operateurPython + " " + droite + ")";
+        }
+        else if (expression instanceof AST.ExpressionUnaire unaire) {
+            String operande = genererExpression(unaire.getOperande());
+            String operateur = unaire.getOperateur();
+
+            // Conversion des opérateurs unaires du pseudo-code vers Python
+            String operateurPython = operateur;
+            if (operateur.equals("NON")) {
+                operateurPython = "not";
+            }
+
+            return "(" + operateurPython + " " + operande + ")";
         }
 
         throw new RuntimeException("Type d'expression non géré: " + expression.getClass().getName());
@@ -180,6 +205,30 @@ public class PythonGenerator implements AST.NodeVisitor {
     }
 
     @Override
+    public void visiter(AST.PourNode node) {
+        // for variable in range(debut, fin + 1):
+        ajouterIndentation();
+        code.append("for ");
+        code.append(node.getVariable());
+        code.append(" in range(");
+        code.append(genererExpression(node.getDebut()));
+        code.append(", ");
+        code.append(genererExpression(node.getFin()));
+        code.append(" + 1):\n");
+
+        // Corps de la boucle (avec indentation augmentée)
+        niveauIndentation++;
+        if (node.getCorps().getInstructions().isEmpty()) {
+            // En Python, un bloc vide nécessite 'pass'
+            ajouterIndentation();
+            code.append("pass\n");
+        } else {
+            node.getCorps().accepter(this);
+        }
+        niveauIndentation--;
+    }
+
+    @Override
     public void visiter(AST.EcrireNode node) {
         // print(expression1, expression2, ...)
         ajouterIndentation();
@@ -199,8 +248,10 @@ public class PythonGenerator implements AST.NodeVisitor {
 
     @Override
     public void visiter(AST.LireNode node) {
-        // Si la variable est déclarée comme ENTIER, on convertit avec int()
-        // Sinon, on utilise simplement input()
+        // Convertir l'input selon le type de la variable
+        // - ENTIER: int(input())
+        // - REEL: float(input())
+        // - TEXTE: input()
         ajouterIndentation();
         code.append(node.getVariable());
         code.append(" = ");
@@ -208,8 +259,11 @@ public class PythonGenerator implements AST.NodeVisitor {
         if (variablesEntieres.contains(node.getVariable())) {
             // variable = int(input())
             code.append("int(input())");
+        } else if (variablesReelles.contains(node.getVariable())) {
+            // variable = float(input())
+            code.append("float(input())");
         } else {
-            // variable = input()
+            // variable = input() (pour TEXTE ou autres)
             code.append("input()");
         }
 
@@ -222,7 +276,17 @@ public class PythonGenerator implements AST.NodeVisitor {
     }
 
     @Override
+    public void visiter(AST.ExpressionUnaire node) {
+        // Cette méthode n'est pas utilisée directement, on utilise genererExpression()
+    }
+
+    @Override
     public void visiter(AST.NombreNode node) {
+        // Cette méthode n'est pas utilisée directement, on utilise genererExpression()
+    }
+
+    @Override
+    public void visiter(AST.NombreReelNode node) {
         // Cette méthode n'est pas utilisée directement, on utilise genererExpression()
     }
 

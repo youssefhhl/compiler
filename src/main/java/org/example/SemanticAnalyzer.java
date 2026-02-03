@@ -96,6 +96,8 @@ public class SemanticAnalyzer {
             analyserSi(si);
         } else if (instruction instanceof AST.TantQueNode tantQue) {
             analyserTantQue(tantQue);
+        } else if (instruction instanceof AST.PourNode pour) {
+            analyserPour(pour);
         } else if (instruction instanceof AST.EcrireNode ecrire) {
             analyserEcrire(ecrire);
         } else if (instruction instanceof AST.LireNode lire) {
@@ -167,6 +169,42 @@ public class SemanticAnalyzer {
     }
 
     /**
+     * Analyse une boucle POUR.
+     * Vérifie que :
+     * - Le débuts et fin de la boucle sont des expressions numériques
+     * - La variable de boucle existe (optionnel: peut être créée implicitement)
+     * - Le corps de la boucle est valide
+     */
+    private void analyserPour(AST.PourNode pour) {
+        String variable = pour.getVariable();
+
+        // Vérifier que les expressions de début et fin sont numériques (ENTIER ou REEL)
+        SymbolTable.TypeDonnee typeDebut = determinerTypeExpression(pour.getDebut());
+        SymbolTable.TypeDonnee typeFin = determinerTypeExpression(pour.getFin());
+
+        boolean debut_numeric = typeDebut != null &&
+            (typeDebut == SymbolTable.TypeDonnee.ENTIER || typeDebut == SymbolTable.TypeDonnee.REEL);
+        boolean fin_numeric = typeFin != null &&
+            (typeFin == SymbolTable.TypeDonnee.ENTIER || typeFin == SymbolTable.TypeDonnee.REEL);
+
+        if (typeDebut != null && !debut_numeric) {
+            erreurs.add("La boucle POUR nécessite un nombre pour l'expression de début. " +
+                       "Type trouvé: " + typeDebut + ".");
+        }
+        if (typeFin != null && !fin_numeric) {
+            erreurs.add("La boucle POUR nécessite un nombre pour l'expression de fin. " +
+                       "Type trouvé: " + typeFin + ".");
+        }
+
+        // Vérifier que toutes les variables utilisées dans les expressions existent
+        verifierVariablesExistent(pour.getDebut());
+        verifierVariablesExistent(pour.getFin());
+
+        // Analyser le corps de la boucle
+        analyserBloc(pour.getCorps());
+    }
+
+    /**
      * Analyse une condition (expression de comparaison).
      */
     private void analyserCondition(AST.Node condition) {
@@ -177,18 +215,23 @@ public class SemanticAnalyzer {
         if (condition instanceof AST.ExpressionBinaire expr) {
             String op = expr.getOperateur();
 
-            // Pour les comparaisons numériques (>, <, >=, <=), les deux côtés doivent être des entiers
+            // Pour les comparaisons numériques (>, <, >=, <=), les deux côtés doivent être des nombres
             if (op.equals(">") || op.equals("<") || op.equals(">=") || op.equals("<=")) {
                 SymbolTable.TypeDonnee typeGauche = determinerTypeExpression(expr.getGauche());
                 SymbolTable.TypeDonnee typeDroite = determinerTypeExpression(expr.getDroite());
 
-                // Vérifier que les deux côtés sont des entiers pour les comparaisons numériques
-                if (typeGauche != null && typeGauche != SymbolTable.TypeDonnee.ENTIER) {
-                    erreurs.add("La comparaison '" + op + "' nécessite des ENTIERS. " +
+                // Vérifier que les deux côtés sont des nombres (ENTIER ou REEL)
+                boolean gauche_numeric = typeGauche != null &&
+                    (typeGauche == SymbolTable.TypeDonnee.ENTIER || typeGauche == SymbolTable.TypeDonnee.REEL);
+                boolean droite_numeric = typeDroite != null &&
+                    (typeDroite == SymbolTable.TypeDonnee.ENTIER || typeDroite == SymbolTable.TypeDonnee.REEL);
+
+                if (typeGauche != null && !gauche_numeric) {
+                    erreurs.add("La comparaison '" + op + "' nécessite des nombres (ENTIER ou REEL). " +
                                "L'opérande gauche est de type " + typeGauche + ".");
                 }
-                if (typeDroite != null && typeDroite != SymbolTable.TypeDonnee.ENTIER) {
-                    erreurs.add("La comparaison '" + op + "' nécessite des ENTIERS. " +
+                if (typeDroite != null && !droite_numeric) {
+                    erreurs.add("La comparaison '" + op + "' nécessite des nombres (ENTIER ou REEL). " +
                                "L'opérande droite est de type " + typeDroite + ".");
                 }
             }
@@ -226,8 +269,12 @@ public class SemanticAnalyzer {
      */
     private SymbolTable.TypeDonnee determinerTypeExpression(AST.Node expression) {
         if (expression instanceof AST.NombreNode) {
-            // Un nombre littéral est un ENTIER
+            // Un nombre littéral entier est un ENTIER
             return SymbolTable.TypeDonnee.ENTIER;
+
+        } else if (expression instanceof AST.NombreReelNode) {
+            // Un nombre littéral réel est un REEL
+            return SymbolTable.TypeDonnee.REEL;
 
         } else if (expression instanceof AST.ChaineNode) {
             // Une chaîne littérale est un TEXTE
@@ -250,6 +297,10 @@ public class SemanticAnalyzer {
         } else if (expression instanceof AST.ExpressionBinaire expr) {
             // Pour une expression binaire, analyser selon l'opérateur
             return analyserExpressionBinaire(expr);
+
+        } else if (expression instanceof AST.ExpressionUnaire expr) {
+            // Pour une expression unaire (NON), analyser l'opérande
+            return analyserExpressionUnaire(expr);
         }
 
         return null;
@@ -268,40 +319,55 @@ public class SemanticAnalyzer {
         verifierVariablesExistent(expr.getGauche());
         verifierVariablesExistent(expr.getDroite());
 
-        // Opérateurs arithmétiques : +, -, *, /
+        // Opérateurs arithmétiques : +, -, *, /, %
         if (operateur.equals("+") || operateur.equals("-") ||
-            operateur.equals("*") || operateur.equals("/")) {
+            operateur.equals("*") || operateur.equals("/") || operateur.equals("%")) {
 
-            // Les opérateurs arithmétiques ne fonctionnent qu'avec des ENTIERS
-            if (typeGauche != null && typeGauche != SymbolTable.TypeDonnee.ENTIER) {
-                erreurs.add("L'opérateur '" + operateur + "' ne peut être utilisé qu'avec des ENTIERS. " +
+            // Les opérateurs arithmétiques fonctionnent avec ENTIER et REEL
+            boolean gauche_numeric = typeGauche != null &&
+                (typeGauche == SymbolTable.TypeDonnee.ENTIER || typeGauche == SymbolTable.TypeDonnee.REEL);
+            boolean droite_numeric = typeDroite != null &&
+                (typeDroite == SymbolTable.TypeDonnee.ENTIER || typeDroite == SymbolTable.TypeDonnee.REEL);
+
+            if (typeGauche != null && !gauche_numeric) {
+                erreurs.add("L'opérateur '" + operateur + "' ne peut être utilisé qu'avec des nombres (ENTIER ou REEL). " +
                            "L'opérande gauche est de type " + typeGauche + ".");
             }
-            if (typeDroite != null && typeDroite != SymbolTable.TypeDonnee.ENTIER) {
-                erreurs.add("L'opérateur '" + operateur + "' ne peut être utilisé qu'avec des ENTIERS. " +
+            if (typeDroite != null && !droite_numeric) {
+                erreurs.add("L'opérateur '" + operateur + "' ne peut être utilisé qu'avec des nombres (ENTIER ou REEL). " +
                            "L'opérande droite est de type " + typeDroite + ".");
             }
 
-            // Le résultat d'une opération arithmétique est un ENTIER
-            return SymbolTable.TypeDonnee.ENTIER;
+            // Le résultat dépend des types des opérandes
+            // Si l'un des deux est REEL, le résultat est REEL
+            // Sinon, le résultat est ENTIER
+            if (typeGauche == SymbolTable.TypeDonnee.REEL || typeDroite == SymbolTable.TypeDonnee.REEL) {
+                return SymbolTable.TypeDonnee.REEL;
+            } else {
+                return SymbolTable.TypeDonnee.ENTIER;
+            }
         }
 
         // Opérateurs de comparaison : >, <, >=, <=
         if (operateur.equals(">") || operateur.equals("<") ||
             operateur.equals(">=") || operateur.equals("<=")) {
 
-            // Les comparaisons numériques nécessitent des ENTIERS des deux côtés
-            if (typeGauche != null && typeGauche != SymbolTable.TypeDonnee.ENTIER) {
-                erreurs.add("L'opérateur '" + operateur + "' nécessite des ENTIERS. " +
+            // Les comparaisons numériques nécessitent des nombres (ENTIER ou REEL) des deux côtés
+            boolean gauche_numeric = typeGauche != null &&
+                (typeGauche == SymbolTable.TypeDonnee.ENTIER || typeGauche == SymbolTable.TypeDonnee.REEL);
+            boolean droite_numeric = typeDroite != null &&
+                (typeDroite == SymbolTable.TypeDonnee.ENTIER || typeDroite == SymbolTable.TypeDonnee.REEL);
+
+            if (typeGauche != null && !gauche_numeric) {
+                erreurs.add("L'opérateur '" + operateur + "' nécessite des nombres (ENTIER ou REEL). " +
                            "L'opérande gauche est de type " + typeGauche + ".");
             }
-            if (typeDroite != null && typeDroite != SymbolTable.TypeDonnee.ENTIER) {
-                erreurs.add("L'opérateur '" + operateur + "' nécessite des ENTIERS. " +
+            if (typeDroite != null && !droite_numeric) {
+                erreurs.add("L'opérateur '" + operateur + "' nécessite des nombres (ENTIER ou REEL). " +
                            "L'opérande droite est de type " + typeDroite + ".");
             }
 
-            // Le résultat d'une comparaison est... on reste en ENTIER pour simplifier
-            // (Pas de type BOOLEEN dans notre langage)
+            // Le résultat d'une comparaison est un booléen (traité comme ENTIER)
             return SymbolTable.TypeDonnee.ENTIER;
         }
 
@@ -316,7 +382,35 @@ public class SemanticAnalyzer {
             return SymbolTable.TypeDonnee.ENTIER; // Résultat booléen traité comme entier
         }
 
+        // Opérateurs logiques : ET, OU
+        if (operateur.equals("ET") || operateur.equals("OU")) {
+            // Les opérateurs logiques acceptent des conditions (résultats de comparaisons)
+            // On ne fait pas de vérification stricte du type ici
+            // Les deux opérandes sont des conditions booléennes
+            return SymbolTable.TypeDonnee.ENTIER; // Traité comme un booléen (entier)
+        }
+
         return typeGauche; // Par défaut, retourner le type de gauche
+    }
+
+    /**
+     * Analyse une expression unaire et retourne son type résultant.
+     * Pour NON (NOT), l'opérande doit être une expression booléenne.
+     */
+    private SymbolTable.TypeDonnee analyserExpressionUnaire(AST.ExpressionUnaire expr) {
+        String operateur = expr.getOperateur();
+
+        // Vérifier que toutes les variables utilisées existent
+        verifierVariablesExistent(expr.getOperande());
+
+        // Opérateur NON
+        if (operateur.equals("NON")) {
+            // NON accepte une expression booléenne (résultat de comparaison, etc.)
+            // Le résultat est un booléen (traité comme ENTIER)
+            return SymbolTable.TypeDonnee.ENTIER;
+        }
+
+        return null;
     }
 
     /**
@@ -334,6 +428,10 @@ public class SemanticAnalyzer {
             // Vérifier récursivement les deux côtés
             verifierVariablesExistent(expr.getGauche());
             verifierVariablesExistent(expr.getDroite());
+
+        } else if (expression instanceof AST.ExpressionUnaire expr) {
+            // Vérifier récursivement l'opérande
+            verifierVariablesExistent(expr.getOperande());
         }
         // Pour NombreNode et ChaineNode, rien à vérifier
     }
