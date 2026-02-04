@@ -5,83 +5,82 @@ package org.example;
  * Chaque token représente un élément lexical du pseudo-code français.
  */
 public enum TokenType {
-    // Mots-clés de structure
-    ALGORITHME,     // Début du programme
-    VARIABLES,      // Section de déclaration des variables
-    DEBUT,          // Début du bloc principal
-    FIN,            // Fin du programme
-    FONCTION,       // Définition de fonction
-    PROCEDURE,      // Définition de procédure (sans retour)
-    RETOURNE,       // Return statement
-    FINFONCTION,    // Fin de fonction
-    FINPROCEDURE,   // Fin de procédure
+    ALGORITHME,
+    VARIABLES,
+    DEBUT,
+    FIN,
+    FONCTION,
+    PROCEDURE,
+    RETOURNE,
+    FINFONCTION,
+    FINPROCEDURE,
 
     // Types de données
-    ENTIER,         // Type entier
-    REEL,           // Type réel (floating-point)
-    TEXTE,          // Type chaîne de caractères
-    BOOLEEN,        // Type booléen
+    ENTIER,
+    REEL,
+    TEXTE,
+    BOOLEEN,
 
     // Entrées/Sorties
-    ECRIRE,         // Afficher à l'écran (alias: AFFICHER)
-    LIRE,           // Lire une entrée utilisateur
+    ECRIRE,
+    LIRE,
 
     // Structures conditionnelles
-    SI,             // Condition if
-    ALORS,          // Début du bloc then
-    SINON,          // Bloc else
-    FINSI,          // Fin de la condition
+    SI,
+    ALORS,
+    SINON,
+    FINSI,
 
     // Boucles
-    TANTQUE,        // Boucle while
-    FAIRE,          // Début du bloc de boucle
-    FINTANTQUE,     // Fin de la boucle
-    POUR,           // Boucle for
-    DE,             // De (from) in for loop
-    A,              // À (to) in for loop
-    FINPOUR,        // Fin de la boucle for
+    TANTQUE,
+    FAIRE,
+    FINTANTQUE,
+    POUR,
+    DE,
+    A,
+    FINPOUR,
 
     // Switch/Cas
-    CAS,            // Switch statement
-    DEFAUT,         // Default case
-    FINCAS,         // End of switch
+    CAS,
+    DEFAUT,
+    FINCAS,
 
     // Opérateurs
-    AFFECTATION,    // <- (affectation)
-    PLUS,           // +
-    MOINS,          // -
-    MULTIPLIE,      // *
-    DIVISE,         // /
-    MODULO,         // % (remainder)
-    SUPERIEUR,      // >
-    INFERIEUR,      // <
-    EGAL,           // ==
-    DIFFERENT,      // !=
-    SUP_EGAL,       // >=
-    INF_EGAL,       // <=
+    AFFECTATION,
+    PLUS,
+    MOINS,
+    MULTIPLIE,
+    DIVISE,
+    MODULO,
+    SUPERIEUR,
+    INFERIEUR,
+    EGAL,
+    DIFFERENT,
+    SUP_EGAL,
+    INF_EGAL,
 
     // Opérateurs logiques
-    ET,             // AND (logical AND)
-    OU,             // OR (logical OR)
-    NON,            // NOT (logical NOT)
+    ET,
+    OU,
+    NON,
 
     // Ponctuation
-    PARENTHESE_G,   // (
-    PARENTHESE_D,   // )
-    CROCHET_G,      // [
-    CROCHET_D,      // ]
-    DEUX_POINTS,    // :
-    VIRGULE,        // ,
+    PARENTHESE_G,
+    PARENTHESE_D,
+    CROCHET_G,
+    CROCHET_D,
+    DEUX_POINTS,
+    VIRGULE,
 
     // Littéraux et identifiants
-    IDENTIFIANT,    // Nom de variable
-    NOMBRE,         // Nombre entier
-    NOMBRE_REEL,    // Nombre réel (floating-point)
-    CHAINE,         // Chaîne de caractères entre guillemets
-    VRAI,           // Booléen vrai
-    FAUX,           // Booléen faux
+    IDENTIFIANT,
+    NOMBRE,
+    NOMBRE_REEL,
+    CHAINE,
+    VRAI,
+    FAUX,
 
     // Spéciaux
-    NOUVELLE_LIGNE, // Fin de ligne
-    EOF             // Fin du fichier
+    NOUVELLE_LIGNE,
+    EOF
 }
