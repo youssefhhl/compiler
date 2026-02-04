@@ -1,6 +1,3 @@
-# Algorithme: Test09SwitchCase
-# Code généré automatiquement à partir du pseudo-code
-
 print("Test 1: Jours de la semaine")
 for operation in range(1, 7 + 1):
     if operation == 1:

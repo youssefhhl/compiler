@@ -1,6 +1,3 @@
-# Algorithme: Test04LoopsWhile
-# Code généré automatiquement à partir du pseudo-code
-
 print("Test 1: Afficher 1 à 5")
 compteur = 1
 while (compteur <= 5):

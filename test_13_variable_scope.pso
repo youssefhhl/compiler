@@ -1,0 +1,16 @@
+ALGORITHME TestVariableScope
+VARIABLES
+    x: ENTIER
+    y: TEXTE
+FONCTION fonctionTest(param: ENTIER)
+    ECRIRE("  Dans fonction: param=", param, " global x=", x)
+FINFONCTION
+
+DEBUT
+    x <- 10
+    y <- "global"
+
+    ECRIRE("Avant appel: x=", x, " y=", y)
+    fonctionTest(5)
+    ECRIRE("Apres appel: x=", x, " y=", y)
+FIN

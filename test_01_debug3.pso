@@ -1,10 +1,13 @@
 ALGORITHME Test01Debug3
 VARIABLES
     nombre: ENTIER
-    message: TEXTE
+    message: ENTIER
+    ayoub: TEXTE
 DEBUT
     nombre <- 42
     message <- "Hello"
+    ayoub <- "Ayoub"
     ECRIRE("Nombre: ", nombre)
     ECRIRE("Message: ", message)
+    ECRIRE("ayoub: ", ayoub)
 FIN

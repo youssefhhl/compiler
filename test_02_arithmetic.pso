@@ -1,7 +1,7 @@
 ALGORITHME Test02Arithmetic
 VARIABLES
     x: ENTIER
-    y: ENTIER
+    y: RE
     z: ENTIER
 DEBUT
     x <- 20

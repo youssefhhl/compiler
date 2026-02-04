@@ -193,6 +193,18 @@ public class Parser {
     }
 
     /**
+     * Regarde le token à offset positions en avant sans le consommer.
+     * Retourne null si hors limites.
+     */
+    private Token regarderAhead(int offset) {
+        int lookaheadPos = position + offset;
+        if (lookaheadPos >= tokens.size()) {
+            return null;
+        }
+        return tokens.get(lookaheadPos);
+    }
+
+    /**
      * Consomme le token si c'est le type attendu, sinon lance une erreur.
      */
     private Token consommer(TokenType type, String messageErreur) {
@@ -375,6 +387,30 @@ public class Parser {
 
         ignorerNouvellesLignes();
 
+        // Parser les variables locales si présentes
+        List<AST.Node> variablesLocales = new ArrayList<>();
+        if (verifier(TokenType.VARIABLES)) {
+            avancer();
+            ignorerNouvellesLignes();
+            // Parse declarations until we encounter something that's not a declaration
+            // A declaration has the pattern: IDENTIFIANT DEUX_POINTS TYPE
+            while (verifier(TokenType.IDENTIFIANT)) {
+                // Lookahead to check if this is a declaration (next non-newline token is DEUX_POINTS)
+                int lookaheadPos = position + 1;
+                while (lookaheadPos < tokens.size() && tokens.get(lookaheadPos).getType() == TokenType.NOUVELLE_LIGNE) {
+                    lookaheadPos++;
+                }
+
+                if (lookaheadPos < tokens.size() && tokens.get(lookaheadPos).getType() == TokenType.DEUX_POINTS) {
+                    variablesLocales.add(parseDeclaration());
+                    ignorerNouvellesLignes();
+                } else {
+                    // Not a declaration, stop parsing variables
+                    break;
+                }
+            }
+        }
+
         AST.BlockNode corps = parseFunctionBody();
 
         if (estProcedure) {
@@ -383,7 +419,7 @@ public class Parser {
             consommer(TokenType.FINFONCTION, "Mot-clé 'FINFONCTION' attendu");
         }
 
-        return new AST.FunctionNode(nomFonction, parametres, typeRetour, corps);
+        return new AST.FunctionNode(nomFonction, parametres, typeRetour, variablesLocales, corps);
     }
 
     /**

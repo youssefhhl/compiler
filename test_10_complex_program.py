@@ -1,6 +1,3 @@
-# Algorithme: Test10ComplexProgram
-# Code généré automatiquement à partir du pseudo-code
-
 notes = [0] * 5
 def CalculerMoyenne(total, count):
     return (total / count)

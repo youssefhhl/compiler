@@ -427,18 +427,31 @@ public class AST {
         private final String nom;                    // Nom de la fonction
         private final List<ParameterNode> parametres; // Paramètres
         private final String typeRetour;            // Type de retour (null pour procédure)
+        private final List<Node> variablesLocales;  // Variables locales (DeclarationNode, ArrayDeclarationNode)
         private final BlockNode corps;               // Corps de la fonction
 
+        // Constructeur sans variables locales (backward compatibility)
         public FunctionNode(String nom, List<ParameterNode> parametres, String typeRetour, BlockNode corps) {
             this.nom = nom;
             this.parametres = parametres;
             this.typeRetour = typeRetour;
+            this.variablesLocales = new ArrayList<>();
+            this.corps = corps;
+        }
+
+        // Constructeur avec variables locales
+        public FunctionNode(String nom, List<ParameterNode> parametres, String typeRetour, List<Node> variablesLocales, BlockNode corps) {
+            this.nom = nom;
+            this.parametres = parametres;
+            this.typeRetour = typeRetour;
+            this.variablesLocales = variablesLocales;
             this.corps = corps;
         }
 
         public String getNom() { return nom; }
         public List<ParameterNode> getParametres() { return parametres; }
         public String getTypeRetour() { return typeRetour; }
+        public List<Node> getVariablesLocales() { return variablesLocales; }
         public BlockNode getCorps() { return corps; }
 
         @Override

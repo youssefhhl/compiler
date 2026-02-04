@@ -1,6 +1,3 @@
-# Algorithme: TestRecursiveFactorial
-# Code généré automatiquement à partir du pseudo-code
-
 def Factorial(n):
     if (n <= 1):
         return 1

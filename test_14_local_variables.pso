@@ -1,0 +1,21 @@
+ALGORITHME TestLocalVariables
+VARIABLES
+    x: ENTIER
+    sum: ENTIER
+
+PROCEDURE calculate(Param1: ENTIER, Param2: ENTIER)
+VARIABLES
+    sum: ENTIER
+    product: ENTIER
+DEBUT
+    sum <- Param1 + Param2
+    product <- Param1 * Param2
+    ECRIRE("sum=", sum, " product=", product, " global x=", x)
+FINPROCEDURE
+
+DEBUT
+    x <- 100
+    ECRIRE("x before: ", x)
+    calculate(5, 3)
+    ECRIRE("x after: ", x)
+FIN

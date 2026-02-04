@@ -1,6 +1,3 @@
-# Algorithme: Test05LoopsFor
-# Code généré automatiquement à partir du pseudo-code
-
 print("Test 1: Afficher 1 à 10")
 for index in range(1, 10 + 1):
     print(index)

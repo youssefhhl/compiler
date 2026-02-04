@@ -92,11 +92,8 @@ public class Main {
             System.out.println("[SUCCES] Compilation reussie!");
             System.out.println("Fichier genere: " + fichierSortie);
             System.out.println();
-            System.out.println("=============================================================");
             System.out.println("Code Python genere:");
-            System.out.println("=============================================================");
             System.out.println(codePython);
-            System.out.println("=============================================================");
 
         } catch (IOException e) {
             System.err.println("[ERREUR] Erreur de lecture/ecriture: " + e.getMessage());

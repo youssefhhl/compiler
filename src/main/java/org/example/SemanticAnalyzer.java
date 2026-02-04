@@ -1,7 +1,10 @@
 package org.example;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Stack;
 
 /**
  * Analyseur Sémantique pour le compilateur Pseudo-code vers Python.
@@ -13,6 +16,7 @@ import java.util.List;
  *                 ne sont utilisés qu'avec des entiers
  * 4. DOUBLONS : Vérifier qu'une variable n'est pas déclarée deux fois
  * 5. FONCTIONS : Vérifier les appels de fonctions et retours
+ * 6. SCOPE : Gérer les variables globales et locales dans les fonctions
  *
  * L'analyse s'effectue AVANT la génération Python. Si des erreurs sont détectées,
  * le fichier Python n'est pas généré.
@@ -22,6 +26,8 @@ public class SemanticAnalyzer implements AST.NodeVisitor {
     private final SymbolTable tableSymboles;
     private final List<String> erreurs;
     private int ligneActuelle;
+    private final Stack<Map<String, SymbolTable.TypeDonnee>> scopeStack;
+    private boolean inFunctionScope = false;
 
     /**
      * Constructeur - initialise l'analyseur avec une table de symboles vide.
@@ -30,6 +36,7 @@ public class SemanticAnalyzer implements AST.NodeVisitor {
         this.tableSymboles = new SymbolTable();
         this.erreurs = new ArrayList<>();
         this.ligneActuelle = 0;
+        this.scopeStack = new Stack<>();
     }
 
     /**
@@ -47,6 +54,11 @@ public class SemanticAnalyzer implements AST.NodeVisitor {
             } else if (declaration instanceof AST.ArrayDeclarationNode arr) {
                 analyserDeclarationTableau(arr);
             }
+        }
+
+        // Analyze functions with their local scope
+        for (AST.FunctionNode fonction : programme.getFonctions()) {
+            analyserFonction(fonction);
         }
 
         analyserBloc(programme.getCorps());
@@ -100,6 +112,48 @@ public class SemanticAnalyzer implements AST.NodeVisitor {
     }
 
     /**
+     * Analyse une fonction avec gestion du scope local.
+     * Les paramètres et variables locales sont traités comme variables locales.
+     */
+    private void analyserFonction(AST.FunctionNode fonction) {
+        // Create local scope for this function
+        Map<String, SymbolTable.TypeDonnee> localScope = new HashMap<>();
+
+        // Add parameters to local scope
+        for (AST.ParameterNode param : fonction.getParametres()) {
+            String paramName = param.getNom();
+            String paramType = param.getType();
+            SymbolTable.TypeDonnee type = SymbolTable.TypeDonnee.valueOf(paramType);
+            localScope.put(paramName, type);
+        }
+
+        // Add local variables to local scope
+        for (AST.Node varDecl : fonction.getVariablesLocales()) {
+            if (varDecl instanceof AST.DeclarationNode d) {
+                String varName = d.getNom();
+                String varType = d.getType();
+                SymbolTable.TypeDonnee type = SymbolTable.TypeDonnee.valueOf(varType);
+
+                // Check for duplicate declarations (parameter with same name)
+                if (localScope.containsKey(varName)) {
+                    erreurs.add("Variable locale '" + varName + "' dans la fonction '" + fonction.getNom() +
+                               "' a le même nom qu'un paramètre.");
+                    continue;
+                }
+
+                localScope.put(varName, type);
+            }
+        }
+
+        // Push local scope and analyze function body
+        scopeStack.push(localScope);
+        inFunctionScope = true;
+        analyserBloc(fonction.getCorps());
+        inFunctionScope = false;
+        scopeStack.pop();
+    }
+
+    /**
      * Analyse un bloc d'instructions.
      */
     private void analyserBloc(AST.BlockNode bloc) {
@@ -146,17 +200,15 @@ public class SemanticAnalyzer implements AST.NodeVisitor {
             return;
         }
 
-        if (!tableSymboles.existe(nomVariable)) {
+        if (!variableExiste(nomVariable)) {
             erreurs.add("Variable '" + nomVariable + "' non déclarée. " +
                        "Déclarez-la dans la section VARIABLES avant de l'utiliser.");
             return;
         }
 
-        SymbolTable.TypeDonnee typeCible;
-        try {
-            typeCible = tableSymboles.getType(nomVariable, ligneActuelle);
-        } catch (SemanticException e) {
-            erreurs.add(e.getMessage());
+        SymbolTable.TypeDonnee typeCible = obtenirTypeVariable(nomVariable);
+        if (typeCible == null) {
+            erreurs.add("Impossible de déterminer le type de la variable '" + nomVariable + "'.");
             return;
         }
 
@@ -270,7 +322,7 @@ public class SemanticAnalyzer implements AST.NodeVisitor {
     private void analyserLire(AST.LireNode lire) {
         String nomVariable = lire.getVariable();
 
-        if (!tableSymboles.existe(nomVariable)) {
+        if (!variableExiste(nomVariable)) {
             erreurs.add("Variable '" + nomVariable + "' non déclarée. " +
                        "Déclarez-la dans la section VARIABLES avant d'utiliser LIRE.");
         }
@@ -319,12 +371,8 @@ public class SemanticAnalyzer implements AST.NodeVisitor {
 
         } else if (expression instanceof AST.IdentifiantNode identifiant) {
             String nom = identifiant.getNom();
-            if (tableSymboles.existe(nom)) {
-                try {
-                    return tableSymboles.getType(nom, ligneActuelle);
-                } catch (SemanticException e) {
-                    return null;
-                }
+            if (variableExiste(nom)) {
+                return obtenirTypeVariable(nom);
             } else {
                 return null;
             }
@@ -433,9 +481,9 @@ public class SemanticAnalyzer implements AST.NodeVisitor {
     private void verifierVariablesExistent(AST.Node expression) {
         if (expression instanceof AST.IdentifiantNode identifiant) {
             String nom = identifiant.getNom();
-            if (!tableSymboles.existe(nom)) {
+            if (!variableExiste(nom)) {
                 erreurs.add("Variable '" + nom + "' non déclarée. " +
-                           "Déclarez-la dans la section VARIABLES.");
+                           "Déclarez-la dans la section VARIABLES ou comme paramètre/variable locale.");
             }
 
         } else if (expression instanceof AST.ExpressionBinaire expr) {
@@ -444,6 +492,40 @@ public class SemanticAnalyzer implements AST.NodeVisitor {
 
         } else if (expression instanceof AST.ExpressionUnaire expr) {
             verifierVariablesExistent(expr.getOperande());
+        }
+    }
+
+    /**
+     * Vérifie si une variable existe, en tenant compte du scope (local ou global).
+     */
+    private boolean variableExiste(String nom) {
+        // Check local scope first if in function
+        if (inFunctionScope && !scopeStack.isEmpty()) {
+            Map<String, SymbolTable.TypeDonnee> localScope = scopeStack.peek();
+            if (localScope.containsKey(nom)) {
+                return true;
+            }
+        }
+        // Check global scope
+        return tableSymboles.existe(nom);
+    }
+
+    /**
+     * Obtient le type d'une variable, en tenant compte du scope (local ou global).
+     */
+    private SymbolTable.TypeDonnee obtenirTypeVariable(String nom) {
+        // Check local scope first if in function
+        if (inFunctionScope && !scopeStack.isEmpty()) {
+            Map<String, SymbolTable.TypeDonnee> localScope = scopeStack.peek();
+            if (localScope.containsKey(nom)) {
+                return localScope.get(nom);
+            }
+        }
+        // Check global scope
+        try {
+            return tableSymboles.getType(nom, ligneActuelle);
+        } catch (SemanticException e) {
+            return null;
         }
     }
 

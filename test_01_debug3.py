@@ -1,7 +1,6 @@
-# Algorithme: Test01Debug3
-# Code généré automatiquement à partir du pseudo-code
-
 nombre = 42
 message = "Hello"
+ayoub = "Ayoub"
 print("Nombre: ", nombre)
 print("Message: ", message)
+print("ayoub: ", ayoub)

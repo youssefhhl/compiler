@@ -1,6 +1,3 @@
-# Algorithme: Test07FunctionsReturn
-# Code généré automatiquement à partir du pseudo-code
-
 def Ajouter(val1, val2):
     return (val1 + val2)
 

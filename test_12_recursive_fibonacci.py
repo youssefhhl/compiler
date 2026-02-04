@@ -1,6 +1,3 @@
-# Algorithme: TestRecursiveFibonacci
-# Code généré automatiquement à partir du pseudo-code
-
 def Fibonacci(n):
     if (n <= 1):
         return n

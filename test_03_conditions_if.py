@@ -1,6 +1,3 @@
-# Algorithme: Test03ConditionsIf
-# Code généré automatiquement à partir du pseudo-code
-
 print("Test 1: age = 25")
 age = 25
 if (age >= 18):

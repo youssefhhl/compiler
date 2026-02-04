@@ -319,6 +319,32 @@ public class PythonGenerator implements AST.NodeVisitor {
         code.append("):\n");
 
         niveauIndentation++;
+
+        // Generate initialization for local variables
+        if (!node.getVariablesLocales().isEmpty()) {
+            for (AST.Node varDecl : node.getVariablesLocales()) {
+                if (varDecl instanceof AST.DeclarationNode d) {
+                    ajouterIndentation();
+                    code.append(d.getNom()).append(" = ");
+
+                    // Initialize with appropriate default value based on type
+                    String type = d.getType();
+                    if (type.equals("ENTIER")) {
+                        code.append("0");
+                    } else if (type.equals("REEL")) {
+                        code.append("0.0");
+                    } else if (type.equals("TEXTE")) {
+                        code.append("\"\"");
+                    } else if (type.equals("BOOLEEN")) {
+                        code.append("False");
+                    } else {
+                        code.append("None");
+                    }
+                    code.append("\n");
+                }
+            }
+        }
+
         if (node.getCorps().getInstructions().isEmpty()) {
             ajouterIndentation();
             code.append("pass\n");

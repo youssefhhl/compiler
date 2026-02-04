@@ -1,6 +1,3 @@
-# Algorithme: Test08Procedures
-# Code généré automatiquement à partir du pseudo-code
-
 def PrintNumber(message, valeur):
     print(message, valeur)
 

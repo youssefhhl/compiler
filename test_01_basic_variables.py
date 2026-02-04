@@ -1,6 +1,3 @@
-# Algorithme: Test01BasicVariables
-# Code généré automatiquement à partir du pseudo-code
-
 print("=== Test des variables de base ===")
 print("Test 1: Variable ENTIER")
 nombre = 42
