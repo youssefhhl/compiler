@@ -43,16 +43,24 @@ public class PythonGenerator implements AST.NodeVisitor {
         code.append("# Algorithme: ").append(programme.getNom()).append("\n");
         code.append("# Code généré automatiquement à partir du pseudo-code\n\n");
 
-        // Enregistrer les types des variables pour la conversion des entrées
-        for (AST.DeclarationNode decl : programme.getDeclarations()) {
-            if (decl.getType().equals("ENTIER")) {
-                variablesEntieres.add(decl.getNom());
-            } else if (decl.getType().equals("REEL")) {
-                variablesReelles.add(decl.getNom());
+        // Enregistrer les types des variables et générer les déclarations
+        for (AST.Node decl : programme.getDeclarations()) {
+            if (decl instanceof AST.DeclarationNode d) {
+                if (d.getType().equals("ENTIER")) {
+                    variablesEntieres.add(d.getNom());
+                } else if (d.getType().equals("REEL")) {
+                    variablesReelles.add(d.getNom());
+                }
+            } else if (decl instanceof AST.ArrayDeclarationNode arr) {
+                // Générer la déclaration du tableau
+                arr.accepter(this);
             }
         }
 
-        // Note: On ne génère pas les déclarations de variables car Python est dynamiquement typé
+        // Générer les définitions de fonctions
+        for (AST.FunctionNode fonction : programme.getFonctions()) {
+            fonction.accepter(this);
+        }
 
         // Générer le corps du programme
         programme.getCorps().accepter(this);
@@ -84,8 +92,32 @@ public class PythonGenerator implements AST.NodeVisitor {
             String valeurEchappee = chaine.getValeur().replace("\"", "\\\"");
             return "\"" + valeurEchappee + "\"";
         }
+        else if (expression instanceof AST.BooleanNode bool) {
+            return bool.getValeur() ? "True" : "False";
+        }
         else if (expression instanceof AST.IdentifiantNode identifiant) {
             return identifiant.getNom();
+        }
+        else if (expression instanceof AST.ArrayAccessNode arrayAccess) {
+            // nom[indice]
+            return arrayAccess.getNom() + "[" + genererExpression(arrayAccess.getIndice()) + "]";
+        }
+        else if (expression instanceof AST.FunctionCallNode appelFonction) {
+            // nom_fonction(arg1, arg2, ...)
+            StringBuilder sb = new StringBuilder();
+            sb.append(appelFonction.getNom()).append("(");
+
+            boolean premier = true;
+            for (AST.Node arg : appelFonction.getArguments()) {
+                if (!premier) {
+                    sb.append(", ");
+                }
+                sb.append(genererExpression(arg));
+                premier = false;
+            }
+
+            sb.append(")");
+            return sb.toString();
         }
         else if (expression instanceof AST.ExpressionBinaire binaire) {
             String gauche = genererExpression(binaire.getGauche());
@@ -141,12 +173,27 @@ public class PythonGenerator implements AST.NodeVisitor {
 
     @Override
     public void visiter(AST.AffectationNode node) {
-        // variable = expression
-        ajouterIndentation();
-        code.append(node.getVariable());
-        code.append(" = ");
-        code.append(genererExpression(node.getValeur()));
-        code.append("\n");
+        // Cas spécial: appel de fonction comme statement (variable = "_call")
+        if (node.getVariable().equals("_call") && node.getValeur() instanceof AST.FunctionCallNode) {
+            // Générer juste l'appel de fonction sans affectation
+            ajouterIndentation();
+            code.append(genererExpression(node.getValeur()));
+            code.append("\n");
+        } else if (node.getValeur() instanceof AST.ExpressionBinaire expr && expr.getOperateur().equals("array_set")) {
+            // Affectation à un élément de tableau: nom[indice] = valeur
+            ajouterIndentation();
+            code.append(genererExpression(expr.getGauche()));
+            code.append(" = ");
+            code.append(genererExpression(expr.getDroite()));
+            code.append("\n");
+        } else {
+            // Affectation normale: variable = expression
+            ajouterIndentation();
+            code.append(node.getVariable());
+            code.append(" = ");
+            code.append(genererExpression(node.getValeur()));
+            code.append("\n");
+        }
     }
 
     @Override
@@ -296,7 +343,112 @@ public class PythonGenerator implements AST.NodeVisitor {
     }
 
     @Override
+    public void visiter(AST.BooleanNode node) {
+        // Cette méthode n'est pas utilisée directement, on utilise genererExpression()
+    }
+
+    @Override
     public void visiter(AST.IdentifiantNode node) {
         // Cette méthode n'est pas utilisée directement, on utilise genererExpression()
+    }
+
+    @Override
+    public void visiter(AST.FunctionNode node) {
+        // Générer une fonction Python
+        // def nom_fonction(param1, param2, ...):
+        code.append("def ").append(node.getNom()).append("(");
+
+        boolean premier = true;
+        for (AST.ParameterNode param : node.getParametres()) {
+            if (!premier) {
+                code.append(", ");
+            }
+            code.append(param.getNom());
+            premier = false;
+        }
+
+        code.append("):\n");
+
+        // Corps de la fonction
+        niveauIndentation++;
+        if (node.getCorps().getInstructions().isEmpty()) {
+            ajouterIndentation();
+            code.append("pass\n");
+        } else {
+            node.getCorps().accepter(this);
+        }
+        niveauIndentation--;
+
+        code.append("\n");
+    }
+
+    @Override
+    public void visiter(AST.FunctionCallNode node) {
+        // Cette méthode n'est pas utilisée directement, on utilise genererExpression()
+    }
+
+    @Override
+    public void visiter(AST.ReturnNode node) {
+        // Générer une instruction return
+        ajouterIndentation();
+        code.append("return ");
+        if (node.getValeur() != null) {
+            code.append(genererExpression(node.getValeur()));
+        }
+        code.append("\n");
+    }
+
+    @Override
+    public void visiter(AST.ArrayDeclarationNode node) {
+        // Génération de tableau: nom = [0] * taille
+        ajouterIndentation();
+        code.append(node.getNom());
+        code.append(" = [0] * ").append(node.getTaille()).append("\n");
+    }
+
+    @Override
+    public void visiter(AST.ArrayAccessNode node) {
+        // Cette méthode n'est pas utilisée directement, on utilise genererExpression()
+    }
+
+    @Override
+    public void visiter(AST.SwitchNode node) {
+        // Generate if/elif/else chain for switch statement
+        String expression = genererExpression(node.getExpression());
+        boolean firstCase = true;
+
+        for (AST.CaseNode caseNode : node.getCases()) {
+            if (firstCase) {
+                ajouterIndentation();
+                code.append("if ").append(expression).append(" == ").append(caseNode.getValeur()).append(":\n");
+                firstCase = false;
+            } else {
+                ajouterIndentation();
+                code.append("elif ").append(expression).append(" == ").append(caseNode.getValeur()).append(":\n");
+            }
+
+            niveauIndentation++;
+            if (caseNode.getInstructions().getInstructions().isEmpty()) {
+                ajouterIndentation();
+                code.append("pass\n");
+            } else {
+                caseNode.getInstructions().accepter(this);
+            }
+            niveauIndentation--;
+        }
+
+        // Handle default case
+        if (node.getCaseDefaut() != null) {
+            ajouterIndentation();
+            code.append("else:\n");
+            niveauIndentation++;
+            if (node.getCaseDefaut().getInstructions().isEmpty()) {
+                ajouterIndentation();
+                code.append("pass\n");
+            } else {
+                node.getCaseDefaut().accepter(this);
+            }
+            niveauIndentation--;
+        }
     }
 }

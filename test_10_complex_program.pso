@@ -1,0 +1,75 @@
+ALGORITHME Test10ComplexProgram
+VARIABLES
+    notes[5]: ENTIER
+    index: ENTIER
+    somme: ENTIER
+    moyenne: REEL
+    grade: ENTIER
+
+FONCTION CalculerMoyenne(total: ENTIER, count: ENTIER) RETOURNE REEL
+    RETOURNE (total / count)
+FINFONCTION
+
+FONCTION DeterminerGrade(moyenne: REEL) RETOURNE ENTIER
+    SI (moyenne >= 90) ALORS
+        RETOURNE 1
+    SINON
+        SI (moyenne >= 80) ALORS
+            RETOURNE 2
+        SINON
+            SI (moyenne >= 70) ALORS
+                RETOURNE 3
+            SINON
+                SI (moyenne >= 60) ALORS
+                    RETOURNE 4
+                SINON
+                    RETOURNE 5
+                FINSI
+            FINSI
+        FINSI
+    FINSI
+FINFONCTION
+
+PROCEDURE ShowGrade(note: ENTIER)
+    CAS note FAIRE
+        1:
+            ECRIRE("Grade: A (Excellent)")
+        2:
+            ECRIRE("Grade: B (Bon)")
+        3:
+            ECRIRE("Grade: C (Acceptable)")
+        4:
+            ECRIRE("Grade: D (Passable)")
+        DEFAUT:
+            ECRIRE("Grade: F (Échoué)")
+    FINCAS
+FINPROCEDURE
+
+DEBUT
+    ECRIRE("=== Programme Gestion des Notes ===")
+
+    ECRIRE("Remplissage des notes:")
+    notes[0] <- 85
+    notes[1] <- 92
+    notes[2] <- 78
+    notes[3] <- 88
+    notes[4] <- 95
+
+    ECRIRE("Notes:")
+    somme <- 0
+    POUR index DE 0 A 4 FAIRE
+        ECRIRE("Note ", (index + 1), ": ", notes[index])
+        somme <- (somme + notes[index])
+    FINPOUR
+
+    ECRIRE("Calcul de la moyenne:")
+    moyenne <- CalculerMoyenne(somme, 5)
+    ECRIRE("Total: ", somme)
+    ECRIRE("Nombre de notes: 5")
+    ECRIRE("Moyenne: ", moyenne)
+
+    grade <- DeterminerGrade(moyenne)
+    ShowGrade(grade)
+
+    ECRIRE("=== Fin du programme ===")
+FIN

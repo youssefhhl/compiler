@@ -23,10 +23,19 @@ public class Lexer {
         MOTS_CLES.put("VARIABLES", TokenType.VARIABLES);
         MOTS_CLES.put("DEBUT", TokenType.DEBUT);
         MOTS_CLES.put("FIN", TokenType.FIN);
+        MOTS_CLES.put("FONCTION", TokenType.FONCTION);
+        MOTS_CLES.put("PROCEDURE", TokenType.PROCEDURE);
+        MOTS_CLES.put("RETOURNE", TokenType.RETOURNE);
+        MOTS_CLES.put("FINFONCTION", TokenType.FINFONCTION);
+        MOTS_CLES.put("FINPROCEDURE", TokenType.FINPROCEDURE);
 
         MOTS_CLES.put("ENTIER", TokenType.ENTIER);
         MOTS_CLES.put("REEL", TokenType.REEL);
         MOTS_CLES.put("TEXTE", TokenType.TEXTE);
+        MOTS_CLES.put("BOOLEEN", TokenType.BOOLEEN);
+
+        MOTS_CLES.put("VRAI", TokenType.VRAI);
+        MOTS_CLES.put("FAUX", TokenType.FAUX);
 
         MOTS_CLES.put("ECRIRE", TokenType.ECRIRE);
         MOTS_CLES.put("AFFICHER", TokenType.ECRIRE);
@@ -44,6 +53,10 @@ public class Lexer {
         MOTS_CLES.put("DE", TokenType.DE);
         MOTS_CLES.put("A", TokenType.A);
         MOTS_CLES.put("FINPOUR", TokenType.FINPOUR);
+
+        MOTS_CLES.put("CAS", TokenType.CAS);
+        MOTS_CLES.put("DEFAUT", TokenType.DEFAUT);
+        MOTS_CLES.put("FINCAS", TokenType.FINCAS);
 
         MOTS_CLES.put("ET", TokenType.ET);
         MOTS_CLES.put("OU", TokenType.OU);
@@ -149,6 +162,14 @@ public class Lexer {
             }
             else if (c == ')') {
                 ajouterToken(TokenType.PARENTHESE_D, ")");
+                avancer();
+            }
+            else if (c == '[') {
+                ajouterToken(TokenType.CROCHET_G, "[");
+                avancer();
+            }
+            else if (c == ']') {
+                ajouterToken(TokenType.CROCHET_D, "]");
                 avancer();
             }
             else if (c == ':') {

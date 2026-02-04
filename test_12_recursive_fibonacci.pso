@@ -1,0 +1,37 @@
+ALGORITHME TestRecursiveFibonacci
+VARIABLES
+    resultat: ENTIER
+
+FONCTION Fibonacci(n: ENTIER) RETOURNE ENTIER
+    SI (n <= 1) ALORS
+        RETOURNE n
+    SINON
+        RETOURNE (Fibonacci((n - 1)) + Fibonacci((n - 2)))
+    FINSI
+FINFONCTION
+
+DEBUT
+    ECRIRE("=== Test Recursive Fibonacci ===")
+
+    ECRIRE("Test 1: Fibonacci(0)")
+    resultat <- Fibonacci(0)
+    ECRIRE("Fib(0) = ", resultat)
+
+    ECRIRE("Test 2: Fibonacci(1)")
+    resultat <- Fibonacci(1)
+    ECRIRE("Fib(1) = ", resultat)
+
+    ECRIRE("Test 3: Fibonacci(5)")
+    resultat <- Fibonacci(5)
+    ECRIRE("Fib(5) = ", resultat)
+
+    ECRIRE("Test 4: Fibonacci(7)")
+    resultat <- Fibonacci(7)
+    ECRIRE("Fib(7) = ", resultat)
+
+    ECRIRE("Test 5: Fibonacci(10)")
+    resultat <- Fibonacci(10)
+    ECRIRE("Fib(10) = ", resultat)
+
+    ECRIRE("=== End of tests ===")
+FIN

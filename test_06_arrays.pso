@@ -1,0 +1,33 @@
+ALGORITHME Test06Arrays
+VARIABLES
+    nombres[10]: ENTIER
+    index: ENTIER
+    somme: ENTIER
+DEBUT
+    ECRIRE("Test 1: Remplir tableau avec carrés")
+    POUR index DE 0 A 9 FAIRE
+        nombres[index] <- (index * index)
+    FINPOUR
+
+    ECRIRE("Test 2: Afficher tableau")
+    POUR index DE 0 A 9 FAIRE
+        ECRIRE("Index ", index, " = ", nombres[index])
+    FINPOUR
+
+    ECRIRE("Test 3: Calculer somme du tableau")
+    somme <- 0
+    POUR index DE 0 A 9 FAIRE
+        somme <- (somme + nombres[index])
+    FINPOUR
+    ECRIRE("Somme totale: ", somme)
+
+    ECRIRE("Test 4: Trouver le maximum")
+    nombres[0] <- 15
+    nombres[1] <- 23
+    nombres[2] <- 8
+    nombres[3] <- 42
+    nombres[4] <- 16
+    POUR index DE 0 A 4 FAIRE
+        ECRIRE("Valeur: ", nombres[index])
+    FINPOUR
+FIN

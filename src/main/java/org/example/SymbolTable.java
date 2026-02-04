@@ -19,9 +19,10 @@ public class SymbolTable {
      * Énumération des types de données supportés.
      */
     public enum TypeDonnee {
-        ENTIER,  // Nombre entier
-        REEL,    // Nombre réel (floating-point)
-        TEXTE    // Chaîne de caractères
+        ENTIER,   // Nombre entier
+        REEL,     // Nombre réel (floating-point)
+        TEXTE,    // Chaîne de caractères
+        BOOLEEN   // Valeur booléenne (vrai ou faux)
     }
 
     /**
@@ -133,8 +134,9 @@ public class SymbolTable {
             case "ENTIER" -> TypeDonnee.ENTIER;
             case "REEL" -> TypeDonnee.REEL;
             case "TEXTE" -> TypeDonnee.TEXTE;
+            case "BOOLEEN" -> TypeDonnee.BOOLEEN;
             default -> throw new SemanticException(
-                "Type inconnu '" + type + "'. Types valides: ENTIER, REEL, TEXTE.",
+                "Type inconnu '" + type + "'. Types valides: ENTIER, REEL, TEXTE, BOOLEEN.",
                 ligne
             );
         };

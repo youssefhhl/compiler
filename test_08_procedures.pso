@@ -1,0 +1,22 @@
+ALGORITHME Test08Procedures
+VARIABLES
+    nombre: ENTIER
+
+PROCEDURE PrintNumber(message: TEXTE, valeur: ENTIER)
+    ECRIRE(message, valeur)
+FINPROCEDURE
+
+PROCEDURE CountTo(limite: ENTIER)
+    ECRIRE("Counting to ", limite)
+FINPROCEDURE
+
+DEBUT
+    ECRIRE("Test 1: Appel de procédure simple")
+    PrintNumber("Nombre: ", 42)
+
+    ECRIRE("Test 2: Appel de procédure avec paramètres")
+    PrintNumber("Résultat: ", 100)
+
+    ECRIRE("Test 3: Compter jusqu'à 5")
+    CountTo(5)
+FIN

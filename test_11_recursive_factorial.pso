@@ -1,0 +1,37 @@
+ALGORITHME TestRecursiveFactorial
+VARIABLES
+    resultat: ENTIER
+
+FONCTION Factorial(n: ENTIER) RETOURNE ENTIER
+    SI (n <= 1) ALORS
+        RETOURNE 1
+    SINON
+        RETOURNE (n * Factorial((n - 1)))
+    FINSI
+FINFONCTION
+
+DEBUT
+    ECRIRE("=== Test Recursive Factorial ===")
+
+    ECRIRE("Test 1: Factorial(0)")
+    resultat <- Factorial(0)
+    ECRIRE("0! = ", resultat)
+
+    ECRIRE("Test 2: Factorial(1)")
+    resultat <- Factorial(1)
+    ECRIRE("1! = ", resultat)
+
+    ECRIRE("Test 3: Factorial(3)")
+    resultat <- Factorial(3)
+    ECRIRE("3! = ", resultat)
+
+    ECRIRE("Test 4: Factorial(5)")
+    resultat <- Factorial(5)
+    ECRIRE("5! = ", resultat)
+
+    ECRIRE("Test 5: Factorial(7)")
+    resultat <- Factorial(7)
+    ECRIRE("7! = ", resultat)
+
+    ECRIRE("=== End of tests ===")
+FIN

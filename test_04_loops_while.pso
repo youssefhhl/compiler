@@ -1,0 +1,29 @@
+ALGORITHME Test04LoopsWhile
+VARIABLES
+    compteur: ENTIER
+    somme: ENTIER
+DEBUT
+    ECRIRE("Test 1: Afficher 1 à 5")
+    compteur <- 1
+    TANTQUE (compteur <= 5) FAIRE
+        ECRIRE(compteur)
+        compteur <- (compteur + 1)
+    FINTANTQUE
+
+    ECRIRE("Test 2: Somme de 1 à 10")
+    compteur <- 1
+    somme <- 0
+    TANTQUE (compteur <= 10) FAIRE
+        somme <- (somme + compteur)
+        compteur <- (compteur + 1)
+    FINTANTQUE
+    ECRIRE("Somme: ", somme)
+
+    ECRIRE("Test 3: Compte à rebours de 5")
+    compteur <- 5
+    TANTQUE (compteur > 0) FAIRE
+        ECRIRE(compteur)
+        compteur <- (compteur - 1)
+    FINTANTQUE
+    ECRIRE("Décollage!")
+FIN

@@ -1,0 +1,7 @@
+ALGORITHME TestBooleanSimple
+VARIABLES
+    flag: BOOLEEN
+DEBUT
+    flag <- VRAI
+    ECRIRE("Flag: ", flag)
+FIN

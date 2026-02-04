@@ -1,0 +1,14 @@
+ALGORITHME Test07Works
+VARIABLES
+    resultat: ENTIER
+
+PROCEDURE ShowNumber(num: ENTIER)
+    ECRIRE("Nombre: ", num)
+FINPROCEDURE
+
+DEBUT
+    ECRIRE("Calling procedure with 42")
+    ShowNumber(42)
+    resultat <- 100
+    ECRIRE("Done!")
+FIN

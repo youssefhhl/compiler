@@ -1,0 +1,32 @@
+ALGORITHME Test05LoopsFor
+VARIABLES
+    index: ENTIER
+    somme: ENTIER
+    nombre: ENTIER
+DEBUT
+    ECRIRE("Test 1: Afficher 1 à 10")
+    POUR index DE 1 A 10 FAIRE
+        ECRIRE(index)
+    FINPOUR
+
+    ECRIRE("Test 2: Afficher nombres pairs de 2 à 10")
+    POUR index DE 2 A 10 FAIRE
+        SI (index % 2 == 0) ALORS
+            ECRIRE(index)
+        FINSI
+    FINPOUR
+
+    ECRIRE("Test 3: Factoriel de 5 (1*2*3*4*5)")
+    nombre <- 1
+    POUR index DE 1 A 5 FAIRE
+        nombre <- (nombre * index)
+    FINPOUR
+    ECRIRE("Résultat: ", nombre)
+
+    ECRIRE("Test 4: Somme des carrés de 1 à 5")
+    somme <- 0
+    POUR index DE 1 A 5 FAIRE
+        somme <- (somme + (index * index))
+    FINPOUR
+    ECRIRE("Somme des carrés: ", somme)
+FIN

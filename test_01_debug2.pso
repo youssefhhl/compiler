@@ -1,0 +1,10 @@
+ALGORITHME Test01Debug2
+VARIABLES
+    nombre: ENTIER
+    texte: ENTIER
+DEBUT
+    nombre <- 42
+    texte <- 100
+    ECRIRE("Nombre: ", nombre)
+    ECRIRE("Texte: ", texte)
+FIN

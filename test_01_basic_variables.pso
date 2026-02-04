@@ -1,0 +1,35 @@
+ALGORITHME Test01BasicVariables
+VARIABLES
+    nombre: ENTIER
+    message: TEXTE
+    pi: REEL
+    actif: BOOLEEN
+DEBUT
+    ECRIRE("=== Test des variables de base ===")
+
+    ECRIRE("Test 1: Variable ENTIER")
+    nombre <- 42
+    ECRIRE("Variable ENTIER: ", nombre)
+
+    ECRIRE("Test 2: Variable TEXTE")
+    message <- "Bonjour le monde"
+    ECRIRE("Variable TEXTE: ", message)
+
+    ECRIRE("Test 3: Variable REEL")
+    pi <- 3.14159
+    ECRIRE("Variable REEL: ", pi)
+
+    ECRIRE("Test 4: Variable BOOLEEN - VRAI")
+    actif <- VRAI
+    ECRIRE("Variable BOOLEEN (VRAI): ", actif)
+
+    ECRIRE("Test 5: Variable BOOLEEN - FAUX")
+    actif <- FAUX
+    ECRIRE("Variable BOOLEEN (FAUX): ", actif)
+
+    ECRIRE("Test 6: Expression booléenne")
+    actif <- (42 > 10)
+    ECRIRE("42 > 10 = ", actif)
+
+    ECRIRE("=== Fin des tests ===")
+FIN

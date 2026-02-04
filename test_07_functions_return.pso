@@ -1,0 +1,32 @@
+ALGORITHME Test07FunctionsReturn
+VARIABLES
+    resultat: ENTIER
+FONCTION Ajouter(val1: ENTIER, val2: ENTIER) RETOURNE ENTIER
+    RETOURNE (val1 + val2)
+FINFONCTION
+
+FONCTION Multiplier(val1: ENTIER, val2: ENTIER) RETOURNE ENTIER
+    RETOURNE (val1 * val2)
+FINFONCTION
+
+FONCTION Puissance(base: ENTIER, exposant: ENTIER) RETOURNE ENTIER
+    RETOURNE (base * base)
+FINFONCTION
+
+DEBUT
+    ECRIRE("Test 1: Ajouter(10, 5)")
+    resultat <- Ajouter(10, 5)
+    ECRIRE("Résultat: ", resultat)
+
+    ECRIRE("Test 2: Multiplier(6, 7)")
+    resultat <- Multiplier(6, 7)
+    ECRIRE("Résultat: ", resultat)
+
+    ECRIRE("Test 3: Puissance(2, 3) = 8")
+    resultat <- Puissance(2, 3)
+    ECRIRE("2^3 = ", resultat)
+
+    ECRIRE("Test 4: Puissance(5, 2) = 25")
+    resultat <- Puissance(5, 2)
+    ECRIRE("5^2 = ", resultat)
+FIN

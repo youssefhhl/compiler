@@ -1,0 +1,30 @@
+ALGORITHME Test03ConditionsIf
+VARIABLES
+    age: ENTIER
+DEBUT
+    ECRIRE("Test 1: age = 25")
+    age <- 25
+    SI (age >= 18) ALORS
+        ECRIRE("Vous êtes majeur")
+    FINSI
+
+    ECRIRE("Test 2: age = 15")
+    age <- 15
+    SI (age >= 18) ALORS
+        ECRIRE("Vous êtes majeur")
+    SINON
+        ECRIRE("Vous êtes mineur")
+    FINSI
+
+    ECRIRE("Test 3: age = 30")
+    age <- 30
+    SI (age < 20) ALORS
+        ECRIRE("Moins de 20 ans")
+    SINON
+        SI (age < 60) ALORS
+            ECRIRE("Entre 20 et 60 ans")
+        SINON
+            ECRIRE("Plus de 60 ans")
+        FINSI
+    FINSI
+FIN

@@ -7,23 +7,138 @@ import java.util.List;
  * Analyseur syntaxique (Parser) utilisant la méthode de descente récursive.
  * Transforme la liste de tokens en un Arbre Syntaxique Abstrait (AST).
  *
- * Grammaire du pseudo-code (simplifiée) :
+ * =====================================================
+ * RÈGLES LEXICALES (Tokens reconnus par le Lexer)
+ * =====================================================
  *
- * programme     -> ALGORITHME identifiant VARIABLES declarations DEBUT instructions FIN
- * declarations  -> (declaration)*
- * declaration   -> identifiant : type
- * type          -> ENTIER | TEXTE
- * instructions  -> (instruction)*
- * instruction   -> affectation | si | tantque | ecrire | lire
- * affectation   -> identifiant <- expression
- * si            -> SI condition ALORS instructions (SINON instructions)? FINSI
- * tantque       -> TANTQUE condition FAIRE instructions FINTANTQUE
- * ecrire        -> ECRIRE ( expression (, expression)* )
- * lire          -> LIRE ( identifiant )
- * condition     -> expression (op_comparaison expression)?
- * expression    -> terme ((+ | -) terme)*
- * terme         -> facteur ((* | /) facteur)*
- * facteur       -> nombre | chaine | identifiant | ( expression )
+ * MOTS-CLÉS:
+ *   - Structure: ALGORITHME, VARIABLES, DEBUT, FIN
+ *   - Fonctions: FONCTION, PROCEDURE, RETOURNE, FINFONCTION, FINPROCEDURE
+ *   - Types: ENTIER, REEL, TEXTE
+ *   - E/S: ECRIRE, AFFICHER (alias), LIRE
+ *   - Contrôle: SI, ALORS, SINON, FINSI
+ *   - Boucles: TANTQUE, FAIRE, FINTANTQUE, POUR, DE, A, FINPOUR
+ *   - Switch: CAS, DEFAUT, FINCAS
+ *   - Logique: ET, OU, NON
+ *
+ * OPÉRATEURS:
+ *   - Affectation: <-
+ *   - Arithmétique: +, -, *, /, %
+ *   - Comparaison: ==, !=, <, >, <=, >=
+ *   - Logiques: ET, OU, NON
+ *
+ * SYMBOLES:
+ *   - Parenthèses: (, )
+ *   - Crochets: [, ]
+ *   - Ponctuation: :, ,
+ *
+ * LITTÉRAUX:
+ *   - Nombres: 0-9+ (NOMBRE)
+ *   - Nombres réels: 0-9+.0-9+ (NOMBRE_REEL)
+ *   - Chaînes: "..." (CHAINE)
+ *   - Identifiants: [a-zA-Z_][a-zA-Z0-9_]* (IDENTIFIANT)
+ *
+ * =====================================================
+ * RÈGLES SYNTAXIQUES (Grammaire complète)
+ * =====================================================
+ *
+ * programme           -> ALGORITHME identifiant VARIABLES declarations DEBUT bloc_principal FIN
+ *
+ * declarations        -> (declaration)*
+ * declaration         -> (array_declaration | var_declaration)
+ * array_declaration   -> identifiant[nombre]: type
+ * var_declaration     -> identifiant: type
+ * type                -> ENTIER | REEL | TEXTE
+ *
+ * bloc_principal      -> (instruction)*
+ *
+ * fonction            -> (FONCTION | PROCEDURE) identifiant(parametres) (RETOURNE type)? corps_fonction
+ * parametres          -> (param (VIRGULE param)*)?
+ * param               -> identifiant: type
+ * corps_fonction      -> DEBUT (instruction | RETOURNE expression)* FINFONCTION | FINPROCEDURE
+ *
+ * instruction         -> affectation
+ *                      | si
+ *                      | tantque
+ *                      | pour
+ *                      | cas
+ *                      | ecrire
+ *                      | lire
+ *                      | retour
+ *
+ * affectation         -> identifiant <- expression
+ *                      | identifiant[expression] <- expression
+ *                      | identifiant(arguments)
+ *
+ * si                  -> SI condition ALORS bloc_instructions (SINON bloc_instructions)? FINSI
+ *
+ * tantque             -> TANTQUE condition FAIRE bloc_instructions FINTANTQUE
+ *
+ * pour                -> POUR identifiant DE expression A expression FAIRE bloc_instructions FINPOUR
+ *
+ * cas                 -> CAS expression FAIRE (cas_item)* (DEFAUT: bloc_instructions)? FINCAS
+ * cas_item            -> nombre: bloc_instructions
+ *
+ * ecrire              -> ECRIRE(expression (VIRGULE expression)*)
+ *
+ * lire                -> LIRE(identifiant | identifiant[expression])
+ *
+ * retour              -> RETOURNE expression
+ *
+ * bloc_instructions   -> (instruction)*
+ *
+ * condition           -> expression
+ *
+ * expression          -> expr_logique
+ * expr_logique        -> expr_comparaison ((ET | OU) expr_comparaison)*
+ * expr_comparaison    -> expr_additive ((== | != | < | > | <= | >=) expr_additive)?
+ * expr_additive       -> expr_multiplicative ((+ | -) expr_multiplicative)*
+ * expr_multiplicative -> expr_unaire ((* | / | %) expr_unaire)*
+ * expr_unaire         -> (NON)? expr_postfixe
+ * expr_postfixe       -> facteur (appel_fonction | acces_tableau)*
+ * facteur             -> nombre
+ *                      | nombre_reel
+ *                      | chaine
+ *                      | identifiant
+ *                      | PARENTHESE_G expression PARENTHESE_D
+ *
+ * appel_fonction      -> PARENTHESE_G (expression (VIRGULE expression)*)? PARENTHESE_D
+ * acces_tableau       -> CROCHET_G expression CROCHET_D
+ *
+ * =====================================================
+ * RÈGLES SÉMANTIQUES (Validation et type-checking)
+ * =====================================================
+ *
+ * 1. DÉCLARATIONS:
+ *    - Chaque variable/tableau doit être déclaré avant utilisation
+ *    - Les noms de variables doivent être uniques dans le même scope
+ *    - La taille d'un tableau doit être > 0
+ *
+ * 2. TYPES:
+ *    - ENTIER: nombres entiers (affichés en Python comme int)
+ *    - REEL: nombres à virgule flottante (affichés en Python comme float)
+ *    - TEXTE: chaînes de caractères (affichés en Python comme str)
+ *    - Types doivent être cohérents dans les affectations
+ *
+ * 3. OPÉRATEURS:
+ *    - Arithmétique (+, -, *, /, %): uniquement avec ENTIER/REEL
+ *    - Comparaison (==, !=, <, >, <=, >=): types doivent être compatibles
+ *    - Logiques (ET, OU, NON): pour conditions booléennes
+ *
+ * 4. FONCTIONS:
+ *    - Les appels de fonction doivent correspondre à la signature déclarée
+ *    - Les fonctions avec RETOURNE type doivent retourner une valeur
+ *    - Les procédures ne retournent rien
+ *
+ * 5. TABLEAUX:
+ *    - Accès par index: array[indice] où indice >= 0 et indice < taille
+ *    - Affectation: array[indice] <- valeur avec type cohérent
+ *
+ * 6. SWITCH/CAS:
+ *    - Expression switch doit être valide
+ *    - Cas doivent être des entiers constants
+ *    - Chaque cas peut contenir plusieurs instructions
+ *    - Cas DEFAUT est optionnel
  */
 public class Parser {
     private final List<Token> tokens;
@@ -107,7 +222,7 @@ public class Parser {
 
     /**
      * Parse le programme complet.
-     * programme -> ALGORITHME identifiant VARIABLES declarations DEBUT instructions FIN
+     * programme -> ALGORITHME identifiant VARIABLES declarations (FONCTION|PROCEDURE)* DEBUT instructions FIN
      */
     private AST.ProgrammeNode parseProgramme() {
         ignorerNouvellesLignes();
@@ -117,10 +232,18 @@ public class Parser {
 
         ignorerNouvellesLignes();
 
-        List<AST.DeclarationNode> declarations = new ArrayList<>();
+        List<AST.Node> declarations = new ArrayList<>();
         if (verifier(TokenType.VARIABLES)) {
             avancer();
             declarations = parseDeclarations();
+        }
+
+        ignorerNouvellesLignes();
+
+        List<AST.FunctionNode> fonctions = new ArrayList<>();
+        while (verifier(TokenType.FONCTION) || verifier(TokenType.PROCEDURE)) {
+            fonctions.add(parseFunction());
+            ignorerNouvellesLignes();
         }
 
         ignorerNouvellesLignes();
@@ -129,15 +252,15 @@ public class Parser {
         AST.BlockNode corps = parseInstructions();
         consommer(TokenType.FIN, "Mot-clé 'FIN' attendu à la fin du programme");
 
-        return new AST.ProgrammeNode(nomAlgorithme, declarations, corps);
+        return new AST.ProgrammeNode(nomAlgorithme, declarations, fonctions, corps);
     }
 
     /**
-     * Parse les déclarations de variables.
+     * Parse les déclarations de variables et de tableaux.
      * declarations -> (declaration)*
      */
-    private List<AST.DeclarationNode> parseDeclarations() {
-        List<AST.DeclarationNode> declarations = new ArrayList<>();
+    private List<AST.Node> parseDeclarations() {
+        List<AST.Node> declarations = new ArrayList<>();
         ignorerNouvellesLignes();
 
         while (verifier(TokenType.IDENTIFIANT)) {
@@ -149,11 +272,43 @@ public class Parser {
     }
 
     /**
-     * Parse une déclaration de variable.
+     * Parse une déclaration de variable ou de tableau.
      * declaration -> identifiant : type
+     * array_declaration -> identifiant[taille] : type
      */
-    private AST.DeclarationNode parseDeclaration() {
+    private AST.Node parseDeclaration() {
         String nom = consommer(TokenType.IDENTIFIANT, "Nom de variable attendu").getValeur();
+
+        // Vérifier si c'est une déclaration de tableau
+        if (verifier(TokenType.CROCHET_G)) {
+            avancer();
+            Token tailleToken = consommer(TokenType.NOMBRE, "Nombre attendu pour la taille du tableau");
+            int taille = Integer.parseInt(tailleToken.getValeur());
+            consommer(TokenType.CROCHET_D, "']' attendu après la taille du tableau");
+            consommer(TokenType.DEUX_POINTS, "':' attendu après la taille du tableau");
+
+            String type;
+            if (verifier(TokenType.ENTIER)) {
+                type = "ENTIER";
+                avancer();
+            } else if (verifier(TokenType.REEL)) {
+                type = "REEL";
+                avancer();
+            } else if (verifier(TokenType.TEXTE)) {
+                type = "TEXTE";
+                avancer();
+            } else if (verifier(TokenType.BOOLEEN)) {
+                type = "BOOLEEN";
+                avancer();
+            } else {
+                throw new RuntimeException("Type attendu (ENTIER, REEL, TEXTE ou BOOLEEN) à la ligne "
+                        + tokenActuel().getLigne());
+            }
+
+            return new AST.ArrayDeclarationNode(nom, taille, type);
+        }
+
+        // Sinon, c'est une déclaration de variable simple
         consommer(TokenType.DEUX_POINTS, "':' attendu après le nom de variable");
 
         String type;
@@ -166,12 +321,141 @@ public class Parser {
         } else if (verifier(TokenType.TEXTE)) {
             type = "TEXTE";
             avancer();
+        } else if (verifier(TokenType.BOOLEEN)) {
+            type = "BOOLEEN";
+            avancer();
         } else {
-            throw new RuntimeException("Type attendu (ENTIER, REEL ou TEXTE) à la ligne "
+            throw new RuntimeException("Type attendu (ENTIER, REEL, TEXTE ou BOOLEEN) à la ligne "
                     + tokenActuel().getLigne());
         }
 
         return new AST.DeclarationNode(nom, type);
+    }
+
+    /**
+     * Parse une définition de fonction.
+     * fonction -> FONCTION identifiant(parametres) [RETOURNE type] ... FINFONCTION
+     * ou procedure -> PROCEDURE identifiant(parametres) ... FINPROCEDURE
+     */
+    private AST.FunctionNode parseFunction() {
+        boolean estProcedure = verifier(TokenType.PROCEDURE);
+        avancer();
+
+        String nomFonction = consommer(TokenType.IDENTIFIANT, "Nom de fonction attendu").getValeur();
+        consommer(TokenType.PARENTHESE_G, "'(' attendu après le nom de fonction");
+
+        List<AST.ParameterNode> parametres = new ArrayList<>();
+        if (!verifier(TokenType.PARENTHESE_D)) {
+            parametres = parseParametres();
+        }
+
+        consommer(TokenType.PARENTHESE_D, "')' attendu après les paramètres");
+
+        ignorerNouvellesLignes();
+
+        String typeRetour = null;
+        if (!estProcedure && verifier(TokenType.RETOURNE)) {
+            avancer();
+            if (verifier(TokenType.ENTIER)) {
+                typeRetour = "ENTIER";
+                avancer();
+            } else if (verifier(TokenType.REEL)) {
+                typeRetour = "REEL";
+                avancer();
+            } else if (verifier(TokenType.TEXTE)) {
+                typeRetour = "TEXTE";
+                avancer();
+            } else if (verifier(TokenType.BOOLEEN)) {
+                typeRetour = "BOOLEEN";
+                avancer();
+            } else {
+                throw new RuntimeException("Type de retour attendu à la ligne " + tokenActuel().getLigne());
+            }
+        }
+
+        ignorerNouvellesLignes();
+
+        AST.BlockNode corps = parseFunctionBody();
+
+        if (estProcedure) {
+            consommer(TokenType.FINPROCEDURE, "Mot-clé 'FINPROCEDURE' attendu");
+        } else {
+            consommer(TokenType.FINFONCTION, "Mot-clé 'FINFONCTION' attendu");
+        }
+
+        return new AST.FunctionNode(nomFonction, parametres, typeRetour, corps);
+    }
+
+    /**
+     * Parse les paramètres d'une fonction.
+     * parametres -> param (, param)*
+     * param -> identifiant : type
+     */
+    private List<AST.ParameterNode> parseParametres() {
+        List<AST.ParameterNode> parametres = new ArrayList<>();
+
+        String nomParam = consommer(TokenType.IDENTIFIANT, "Nom de paramètre attendu").getValeur();
+        consommer(TokenType.DEUX_POINTS, "':' attendu après le nom du paramètre");
+
+        String typeParam;
+        if (verifier(TokenType.ENTIER)) {
+            typeParam = "ENTIER";
+            avancer();
+        } else if (verifier(TokenType.REEL)) {
+            typeParam = "REEL";
+            avancer();
+        } else if (verifier(TokenType.TEXTE)) {
+            typeParam = "TEXTE";
+            avancer();
+        } else {
+            throw new RuntimeException("Type attendu pour le paramètre");
+        }
+
+        parametres.add(new AST.ParameterNode(nomParam, typeParam));
+
+        while (verifier(TokenType.VIRGULE)) {
+            avancer();
+            nomParam = consommer(TokenType.IDENTIFIANT, "Nom de paramètre attendu").getValeur();
+            consommer(TokenType.DEUX_POINTS, "':' attendu après le nom du paramètre");
+
+            if (verifier(TokenType.ENTIER)) {
+                typeParam = "ENTIER";
+                avancer();
+            } else if (verifier(TokenType.REEL)) {
+                typeParam = "REEL";
+                avancer();
+            } else if (verifier(TokenType.TEXTE)) {
+                typeParam = "TEXTE";
+                avancer();
+            } else {
+                throw new RuntimeException("Type attendu pour le paramètre");
+            }
+
+            parametres.add(new AST.ParameterNode(nomParam, typeParam));
+        }
+
+        return parametres;
+    }
+
+    /**
+     * Parse le corps d'une fonction (comme parseInstructions mais avec RETOURNE).
+     */
+    private AST.BlockNode parseFunctionBody() {
+        AST.BlockNode bloc = new AST.BlockNode();
+        ignorerNouvellesLignes();
+
+        while (!verifier(TokenType.FINFONCTION) &&
+               !verifier(TokenType.FINPROCEDURE) &&
+               !verifier(TokenType.EOF)) {
+
+            AST.Node instruction = parseInstruction();
+            if (instruction != null) {
+                bloc.ajouter(instruction);
+            }
+            ignorerNouvellesLignes();
+        }
+
+        return bloc;
     }
 
     /**
@@ -187,6 +471,9 @@ public class Parser {
                !verifier(TokenType.FINSI) &&
                !verifier(TokenType.FINTANTQUE) &&
                !verifier(TokenType.FINPOUR) &&
+               !verifier(TokenType.FINCAS) &&
+               !verifier(TokenType.DEFAUT) &&
+               !verifier(TokenType.NOMBRE) &&
                !verifier(TokenType.EOF)) {
 
             AST.Node instruction = parseInstruction();
@@ -201,13 +488,21 @@ public class Parser {
 
     /**
      * Parse une instruction unique.
-     * instruction -> affectation | si | tantque | pour | ecrire | lire
+     * instruction -> affectation | si | tantque | pour | cas | ecrire | lire | retourne
      */
     private AST.Node parseInstruction() {
         ignorerNouvellesLignes();
 
+        if (verifier(TokenType.RETOURNE)) {
+            return parseRetour();
+        }
+
         if (verifier(TokenType.SI)) {
             return parseSi();
+        }
+
+        if (verifier(TokenType.CAS)) {
+            return parseSwitch();
         }
 
         if (verifier(TokenType.TANTQUE)) {
@@ -227,7 +522,7 @@ public class Parser {
         }
 
         if (verifier(TokenType.IDENTIFIANT)) {
-            return parseAffectation();
+            return parseAffectationOuAppel();
         }
 
         Token t = tokenActuel();
@@ -235,7 +530,12 @@ public class Parser {
             t.getType() != TokenType.FIN &&
             t.getType() != TokenType.FINSI &&
             t.getType() != TokenType.FINTANTQUE &&
-            t.getType() != TokenType.FINPOUR) {
+            t.getType() != TokenType.FINPOUR &&
+            t.getType() != TokenType.FINFONCTION &&
+            t.getType() != TokenType.FINPROCEDURE &&
+            t.getType() != TokenType.FINCAS &&
+            t.getType() != TokenType.DEFAUT &&
+            t.getType() != TokenType.NOMBRE) {
             throw new RuntimeException("Instruction inattendue: " + t.getValeur()
                     + " à la ligne " + t.getLigne());
         }
@@ -244,15 +544,63 @@ public class Parser {
     }
 
     /**
-     * Parse une affectation.
-     * affectation -> identifiant <- expression
+     * Parse une instruction RETOURNE.
+     * retourne -> RETOURNE expression
      */
-    private AST.AffectationNode parseAffectation() {
-        String variable = consommer(TokenType.IDENTIFIANT, "Identifiant attendu").getValeur();
+    private AST.ReturnNode parseRetour() {
+        consommer(TokenType.RETOURNE, "Mot-clé 'RETOURNE' attendu");
+        AST.Node valeur = parseExpression();
+        return new AST.ReturnNode(valeur);
+    }
+
+    /**
+     * Parse une affectation, un accès tableau, ou un appel de fonction comme instruction.
+     * affectation -> identifiant <- expression
+     * array_affectation -> identifiant[indice] <- expression
+     * appel_fonction -> identifiant(arguments)
+     */
+    private AST.Node parseAffectationOuAppel() {
+        String identifiant = consommer(TokenType.IDENTIFIANT, "Identifiant attendu").getValeur();
+
+        // Vérifier si c'est un appel de fonction
+        if (verifier(TokenType.PARENTHESE_G)) {
+            avancer();
+            List<AST.Node> arguments = new ArrayList<>();
+            if (!verifier(TokenType.PARENTHESE_D)) {
+                arguments.add(parseExpression());
+                while (verifier(TokenType.VIRGULE)) {
+                    avancer();
+                    arguments.add(parseExpression());
+                }
+            }
+            consommer(TokenType.PARENTHESE_D, "')' attendu après les arguments de la fonction");
+            // Retourner une affectation fictive car les appels de fonction purs n'ont pas de nœud dédié
+            // On va encapsuler le FunctionCallNode dans une affectation à une variable temporaire
+            return new AST.AffectationNode("_call", new AST.FunctionCallNode(identifiant, arguments));
+        }
+
+        // Vérifier si c'est une affectation à un élément de tableau
+        if (verifier(TokenType.CROCHET_G)) {
+            avancer();
+            AST.Node indice = parseExpression();
+            consommer(TokenType.CROCHET_D, "']' attendu après l'indice du tableau");
+            consommer(TokenType.AFFECTATION, "Opérateur '<-' attendu");
+            AST.Node valeur = parseExpression();
+
+            // Créer une affectation spéciale à un élément de tableau
+            // On utilise ArrayAccessNode comme variable fictive
+            return new AST.AffectationNode(identifiant, new AST.ExpressionBinaire(
+                new AST.ArrayAccessNode(identifiant, indice),
+                "array_set",
+                valeur
+            ));
+        }
+
+        // Sinon, c'est une affectation simple
         consommer(TokenType.AFFECTATION, "Opérateur '<-' attendu");
         AST.Node valeur = parseExpression();
 
-        return new AST.AffectationNode(variable, valeur);
+        return new AST.AffectationNode(identifiant, valeur);
     }
 
     /**
@@ -309,6 +657,55 @@ public class Parser {
         consommer(TokenType.FINPOUR, "Mot-clé 'FINPOUR' attendu");
 
         return new AST.PourNode(variable, debut, fin, corps);
+    }
+
+    /**
+     * Parse une instruction CAS (switch).
+     * cas -> CAS expression FAIRE (cas)* [DEFAUT : instructions] FINCAS
+     */
+    private AST.SwitchNode parseSwitch() {
+        consommer(TokenType.CAS, "Mot-clé 'CAS' attendu");
+        AST.Node expression = parseExpression();
+        consommer(TokenType.FAIRE, "Mot-clé 'FAIRE' attendu après l'expression du switch");
+
+        List<AST.CaseNode> cases = new ArrayList<>();
+        AST.BlockNode caseDefaut = null;
+
+        ignorerNouvellesLignes();
+
+        while (!verifier(TokenType.FINCAS) && !verifier(TokenType.EOF)) {
+            if (verifier(TokenType.DEFAUT)) {
+                avancer();
+                consommer(TokenType.DEUX_POINTS, "':' attendu après DEFAUT");
+                ignorerNouvellesLignes();
+                caseDefaut = parseInstructions();
+                ignorerNouvellesLignes();
+                break;
+            } else if (verifier(TokenType.NOMBRE)) {
+                Token valeurToken = avancer();
+                int valeur = Integer.parseInt(valeurToken.getValeur());
+                consommer(TokenType.DEUX_POINTS, "':' attendu après la valeur du cas");
+                ignorerNouvellesLignes();
+
+                AST.BlockNode caseBody = new AST.BlockNode();
+                while (!verifier(TokenType.NOMBRE) && !verifier(TokenType.DEFAUT) &&
+                       !verifier(TokenType.FINCAS) && !verifier(TokenType.EOF)) {
+                    AST.Node instruction = parseInstruction();
+                    if (instruction != null) {
+                        caseBody.ajouter(instruction);
+                    }
+                    ignorerNouvellesLignes();
+                }
+
+                cases.add(new AST.CaseNode(valeur, caseBody));
+                ignorerNouvellesLignes();
+            } else {
+                ignorerNouvellesLignes();
+            }
+        }
+
+        consommer(TokenType.FINCAS, "Mot-clé 'FINCAS' attendu à la fin du switch");
+        return new AST.SwitchNode(expression, cases, caseDefaut);
     }
 
     /**
@@ -474,9 +871,43 @@ public class Parser {
             return new AST.ChaineNode(valeur);
         }
 
+        if (verifier(TokenType.VRAI)) {
+            avancer();
+            return new AST.BooleanNode(true);
+        }
+
+        if (verifier(TokenType.FAUX)) {
+            avancer();
+            return new AST.BooleanNode(false);
+        }
+
         if (verifier(TokenType.IDENTIFIANT)) {
             String nom = tokenActuel().getValeur();
             avancer();
+
+            // Vérifier si c'est un appel de fonction
+            if (verifier(TokenType.PARENTHESE_G)) {
+                avancer();
+                List<AST.Node> arguments = new ArrayList<>();
+                if (!verifier(TokenType.PARENTHESE_D)) {
+                    arguments.add(parseExpression());
+                    while (verifier(TokenType.VIRGULE)) {
+                        avancer();
+                        arguments.add(parseExpression());
+                    }
+                }
+                consommer(TokenType.PARENTHESE_D, "')' attendu après les arguments de la fonction");
+                return new AST.FunctionCallNode(nom, arguments);
+            }
+
+            // Vérifier si c'est un accès à un tableau
+            if (verifier(TokenType.CROCHET_G)) {
+                avancer();
+                AST.Node indice = parseExpression();
+                consommer(TokenType.CROCHET_D, "']' attendu après l'indice du tableau");
+                return new AST.ArrayAccessNode(nom, indice);
+            }
+
             return new AST.IdentifiantNode(nom);
         }
 

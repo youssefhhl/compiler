@@ -1,0 +1,55 @@
+ALGORITHME Test09SwitchCase
+VARIABLES
+    operation: ENTIER
+    resultat: ENTIER
+
+DEBUT
+    ECRIRE("Test 1: Jours de la semaine")
+    POUR operation DE 1 A 7 FAIRE
+        CAS operation FAIRE
+            1: ECRIRE("Lundi")
+            2: ECRIRE("Mardi")
+            3: ECRIRE("Mercredi")
+            4: ECRIRE("Jeudi")
+            5: ECRIRE("Vendredi")
+            6: ECRIRE("Samedi")
+            7: ECRIRE("Dimanche")
+            DEFAUT: ECRIRE("Jour invalide")
+        FINCAS
+    FINPOUR
+
+    ECRIRE("Test 2: Calcul simple par opération")
+    POUR operation DE 1 A 5 FAIRE
+        resultat <- 0
+        CAS operation FAIRE
+            1:
+                resultat <- (10 + 5)
+                ECRIRE("Addition: 10 + 5 = ", resultat)
+            2:
+                resultat <- (10 - 5)
+                ECRIRE("Soustraction: 10 - 5 = ", resultat)
+            3:
+                resultat <- (10 * 5)
+                ECRIRE("Multiplication: 10 * 5 = ", resultat)
+            4:
+                resultat <- (10 / 5)
+                ECRIRE("Division: 10 / 5 = ", resultat)
+            DEFAUT:
+                ECRIRE("Opération inconnue")
+        FINCAS
+    FINPOUR
+
+    ECRIRE("Test 3: Grades")
+    POUR operation DE 1 A 4 FAIRE
+        CAS operation FAIRE
+            1:
+                ECRIRE("Grade A: Excellent")
+            2:
+                ECRIRE("Grade B: Bon")
+            3:
+                ECRIRE("Grade C: Acceptable")
+            DEFAUT:
+                ECRIRE("Grade non reconnu")
+        FINCAS
+    FINPOUR
+FIN

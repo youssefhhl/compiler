@@ -9,14 +9,15 @@ import java.util.List;
  * Cet analyseur parcourt l'AST et effectue les vérifications suivantes :
  * 1. EXISTENCE : Vérifier qu'une variable est déclarée avant utilisation
  * 2. TYPES : Empêcher l'affectation d'un TEXTE dans un ENTIER (et inversement)
- * 3. OPÉRATIONS : Vérifier que les opérateurs mathématiques (+, -, *, /)
+ * 3. OPÉRATIONS : Vérifier que les opérateurs mathématiques (+, -, /, %)
  *                 ne sont utilisés qu'avec des entiers
  * 4. DOUBLONS : Vérifier qu'une variable n'est pas déclarée deux fois
+ * 5. FONCTIONS : Vérifier les appels de fonctions et retours
  *
  * L'analyse s'effectue AVANT la génération Python. Si des erreurs sont détectées,
  * le fichier Python n'est pas généré.
  */
-public class SemanticAnalyzer {
+public class SemanticAnalyzer implements AST.NodeVisitor {
 
     private final SymbolTable tableSymboles;
     private final List<String> erreurs;
@@ -40,8 +41,12 @@ public class SemanticAnalyzer {
     public void analyser(AST.ProgrammeNode programme) throws SemanticException {
         erreurs.clear();
 
-        for (AST.DeclarationNode declaration : programme.getDeclarations()) {
-            analyserDeclaration(declaration);
+        for (AST.Node declaration : programme.getDeclarations()) {
+            if (declaration instanceof AST.DeclarationNode d) {
+                analyserDeclaration(d);
+            } else if (declaration instanceof AST.ArrayDeclarationNode arr) {
+                analyserDeclarationTableau(arr);
+            }
         }
 
         analyserBloc(programme.getCorps());
@@ -62,6 +67,28 @@ public class SemanticAnalyzer {
      */
     private void analyserDeclaration(AST.DeclarationNode declaration) {
         try {
+            tableSymboles.declarer(
+                declaration.getNom(),
+                declaration.getType(),
+                1 // Ligne approximative (section VARIABLES)
+            );
+        } catch (SemanticException e) {
+            erreurs.add(e.getMessage());
+        }
+    }
+
+    /**
+     * Analyse une déclaration de tableau.
+     * Enregistre le tableau dans la table des symboles avec un type spécial.
+     */
+    private void analyserDeclarationTableau(AST.ArrayDeclarationNode declaration) {
+        try {
+            // Valider la taille du tableau
+            if (declaration.getTaille() <= 0) {
+                erreurs.add("La taille du tableau '" + declaration.getNom() + "' doit être positive");
+                return;
+            }
+
             tableSymboles.declarer(
                 declaration.getNom(),
                 declaration.getType(),
@@ -98,6 +125,8 @@ public class SemanticAnalyzer {
             analyserEcrire(ecrire);
         } else if (instruction instanceof AST.LireNode lire) {
             analyserLire(lire);
+        } else if (instruction instanceof AST.SwitchNode switchNode) {
+            analyserSwitch(switchNode);
         }
     }
 
@@ -106,9 +135,16 @@ public class SemanticAnalyzer {
      * Vérifie :
      * - La variable cible existe
      * - Le type de l'expression est compatible avec le type de la variable
+     * - Cas spécial: "_call" est utilisé pour les appels de fonction standalone
      */
     private void analyserAffectation(AST.AffectationNode affectation) {
         String nomVariable = affectation.getVariable();
+
+        // Cas spécial: appel de fonction standalone (pas une vraie affectation)
+        if (nomVariable.equals("_call")) {
+            verifierVariablesExistent(affectation.getValeur());
+            return;
+        }
 
         if (!tableSymboles.existe(nomVariable)) {
             erreurs.add("Variable '" + nomVariable + "' non déclarée. " +
@@ -241,6 +277,28 @@ public class SemanticAnalyzer {
     }
 
     /**
+     * Analyse une instruction SWITCH/CAS.
+     * Vérifie que :
+     * - L'expression switch existe et est valide
+     * - Chaque branche case est analysée
+     * - Le cas défaut (s'il existe) est analysé
+     */
+    private void analyserSwitch(AST.SwitchNode switchNode) {
+        // Verify switch expression exists
+        verifierVariablesExistent(switchNode.getExpression());
+
+        // Analyze each case body
+        for (AST.CaseNode caseNode : switchNode.getCases()) {
+            analyserBloc(caseNode.getInstructions());
+        }
+
+        // Analyze default case if present
+        if (switchNode.getCaseDefaut() != null) {
+            analyserBloc(switchNode.getCaseDefaut());
+        }
+    }
+
+    /**
      * Détermine le type d'une expression.
      *
      * @param expression L'expression à analyser
@@ -255,6 +313,9 @@ public class SemanticAnalyzer {
 
         } else if (expression instanceof AST.ChaineNode) {
             return SymbolTable.TypeDonnee.TEXTE;
+
+        } else if (expression instanceof AST.BooleanNode) {
+            return SymbolTable.TypeDonnee.BOOLEEN;
 
         } else if (expression instanceof AST.IdentifiantNode identifiant) {
             String nom = identifiant.getNom();
@@ -331,7 +392,7 @@ public class SemanticAnalyzer {
                            "L'opérande droite est de type " + typeDroite + ".");
             }
 
-            return SymbolTable.TypeDonnee.ENTIER;
+            return SymbolTable.TypeDonnee.BOOLEEN;
         }
 
         if (operateur.equals("==") || operateur.equals("!=")) {
@@ -340,11 +401,11 @@ public class SemanticAnalyzer {
                            typeGauche + " et " + typeDroite + ".");
             }
 
-            return SymbolTable.TypeDonnee.ENTIER;
+            return SymbolTable.TypeDonnee.BOOLEEN;
         }
 
         if (operateur.equals("ET") || operateur.equals("OU")) {
-            return SymbolTable.TypeDonnee.ENTIER;
+            return SymbolTable.TypeDonnee.BOOLEEN;
         }
 
         return typeGauche;
@@ -405,5 +466,86 @@ public class SemanticAnalyzer {
      */
     public boolean estValide() {
         return erreurs.isEmpty();
+    }
+
+    // ==================== VISITOR METHODS ====================
+
+    @Override
+    public void visiter(AST.ProgrammeNode node) {}
+
+    @Override
+    public void visiter(AST.BlockNode node) {}
+
+    @Override
+    public void visiter(AST.DeclarationNode node) {}
+
+    @Override
+    public void visiter(AST.AffectationNode node) {}
+
+    @Override
+    public void visiter(AST.SiNode node) {}
+
+    @Override
+    public void visiter(AST.TantQueNode node) {}
+
+    @Override
+    public void visiter(AST.PourNode node) {}
+
+    @Override
+    public void visiter(AST.EcrireNode node) {}
+
+    @Override
+    public void visiter(AST.LireNode node) {}
+
+    @Override
+    public void visiter(AST.ExpressionBinaire node) {}
+
+    @Override
+    public void visiter(AST.ExpressionUnaire node) {}
+
+    @Override
+    public void visiter(AST.NombreNode node) {}
+
+    @Override
+    public void visiter(AST.NombreReelNode node) {}
+
+    @Override
+    public void visiter(AST.ChaineNode node) {}
+
+    @Override
+    public void visiter(AST.BooleanNode node) {}
+
+    @Override
+    public void visiter(AST.IdentifiantNode node) {}
+
+    @Override
+    public void visiter(AST.FunctionNode node) {}
+
+    @Override
+    public void visiter(AST.FunctionCallNode node) {}
+
+    @Override
+    public void visiter(AST.ReturnNode node) {}
+
+    @Override
+    public void visiter(AST.ArrayDeclarationNode node) {}
+
+    @Override
+    public void visiter(AST.ArrayAccessNode node) {}
+
+    @Override
+    public void visiter(AST.SwitchNode node) {
+        // Validate the expression being switched on
+        verifierVariablesExistent(node.getExpression());
+
+        // Analyze each case body
+        for (AST.CaseNode caseNode : node.getCases()) {
+            analyserBloc(caseNode.getInstructions());
+        }
+
+        // Analyze default case if present
+        if (node.getCaseDefaut() != null) {
+            analyserBloc(node.getCaseDefaut());
+        }
     }
 }

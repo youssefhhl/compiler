@@ -35,7 +35,14 @@ public class AST {
         void visiter(NombreNode node);
         void visiter(NombreReelNode node);
         void visiter(ChaineNode node);
+        void visiter(BooleanNode node);
         void visiter(IdentifiantNode node);
+        void visiter(FunctionNode node);
+        void visiter(FunctionCallNode node);
+        void visiter(ReturnNode node);
+        void visiter(ArrayDeclarationNode node);
+        void visiter(ArrayAccessNode node);
+        void visiter(SwitchNode node);
     }
 
     // ==================== NŒUDS DE STRUCTURE ====================
@@ -44,18 +51,28 @@ public class AST {
      * Nœud représentant le programme complet.
      */
     public static class ProgrammeNode extends Node {
-        private final String nom;                    // Nom de l'algorithme
-        private final List<DeclarationNode> declarations; // Déclarations de variables
-        private final BlockNode corps;               // Corps du programme (DEBUT...FIN)
+        private final String nom;                // Nom de l'algorithme
+        private final List<Node> declarations;   // Déclarations de variables et tableaux (DeclarationNode, ArrayDeclarationNode)
+        private final List<FunctionNode> fonctions;  // Définitions de fonctions
+        private final BlockNode corps;           // Corps du programme (DEBUT...FIN)
 
-        public ProgrammeNode(String nom, List<DeclarationNode> declarations, BlockNode corps) {
+        public ProgrammeNode(String nom, List<Node> declarations, BlockNode corps) {
             this.nom = nom;
             this.declarations = declarations;
+            this.fonctions = new ArrayList<>();
+            this.corps = corps;
+        }
+
+        public ProgrammeNode(String nom, List<Node> declarations, List<FunctionNode> fonctions, BlockNode corps) {
+            this.nom = nom;
+            this.declarations = declarations;
+            this.fonctions = fonctions;
             this.corps = corps;
         }
 
         public String getNom() { return nom; }
-        public List<DeclarationNode> getDeclarations() { return declarations; }
+        public List<Node> getDeclarations() { return declarations; }
+        public List<FunctionNode> getFonctions() { return fonctions; }
         public BlockNode getCorps() { return corps; }
 
         @Override
@@ -349,6 +366,24 @@ public class AST {
     }
 
     /**
+     * Nœud représentant une valeur booléenne littérale (VRAI ou FAUX).
+     */
+    public static class BooleanNode extends Node {
+        private final boolean valeur;
+
+        public BooleanNode(boolean valeur) {
+            this.valeur = valeur;
+        }
+
+        public boolean getValeur() { return valeur; }
+
+        @Override
+        public void accepter(NodeVisitor visiteur) {
+            visiteur.visiter(this);
+        }
+    }
+
+    /**
      * Nœud représentant un identifiant (nom de variable).
      */
     public static class IdentifiantNode extends Node {
@@ -359,6 +394,189 @@ public class AST {
         }
 
         public String getNom() { return nom; }
+
+        @Override
+        public void accepter(NodeVisitor visiteur) {
+            visiteur.visiter(this);
+        }
+    }
+
+    // ==================== NŒUDS DE FONCTIONS ====================
+
+    /**
+     * Classe représentant un paramètre de fonction.
+     */
+    public static class ParameterNode {
+        private final String nom;   // Nom du paramètre
+        private final String type;  // Type (ENTIER, REEL, TEXTE)
+
+        public ParameterNode(String nom, String type) {
+            this.nom = nom;
+            this.type = type;
+        }
+
+        public String getNom() { return nom; }
+        public String getType() { return type; }
+    }
+
+    /**
+     * Nœud représentant une définition de fonction.
+     * Ex: FONCTION Add(a: ENTIER, b: ENTIER) RETOURNE ENTIER ... FINFONCTION
+     */
+    public static class FunctionNode extends Node {
+        private final String nom;                    // Nom de la fonction
+        private final List<ParameterNode> parametres; // Paramètres
+        private final String typeRetour;            // Type de retour (null pour procédure)
+        private final BlockNode corps;               // Corps de la fonction
+
+        public FunctionNode(String nom, List<ParameterNode> parametres, String typeRetour, BlockNode corps) {
+            this.nom = nom;
+            this.parametres = parametres;
+            this.typeRetour = typeRetour;
+            this.corps = corps;
+        }
+
+        public String getNom() { return nom; }
+        public List<ParameterNode> getParametres() { return parametres; }
+        public String getTypeRetour() { return typeRetour; }
+        public BlockNode getCorps() { return corps; }
+
+        @Override
+        public void accepter(NodeVisitor visiteur) {
+            visiteur.visiter(this);
+        }
+    }
+
+    /**
+     * Nœud représentant un appel de fonction.
+     * Ex: result <- Add(5, 3)
+     */
+    public static class FunctionCallNode extends Node {
+        private final String nom;              // Nom de la fonction
+        private final List<Node> arguments;    // Arguments de l'appel
+
+        public FunctionCallNode(String nom, List<Node> arguments) {
+            this.nom = nom;
+            this.arguments = arguments;
+        }
+
+        public String getNom() { return nom; }
+        public List<Node> getArguments() { return arguments; }
+
+        @Override
+        public void accepter(NodeVisitor visiteur) {
+            visiteur.visiter(this);
+        }
+    }
+
+    /**
+     * Nœud représentant une instruction RETOURNE.
+     * Ex: RETOURNE (a + b)
+     */
+    public static class ReturnNode extends Node {
+        private final Node valeur;  // Expression à retourner (null pour procédure)
+
+        public ReturnNode(Node valeur) {
+            this.valeur = valeur;
+        }
+
+        public Node getValeur() { return valeur; }
+
+        @Override
+        public void accepter(NodeVisitor visiteur) {
+            visiteur.visiter(this);
+        }
+    }
+
+    // ==================== NŒUDS DE TABLEAUX ====================
+
+    /**
+     * Nœud représentant une déclaration de tableau.
+     * Ex: nombres[10]: ENTIER
+     */
+    public static class ArrayDeclarationNode extends Node {
+        private final String nom;           // Nom du tableau
+        private final int taille;           // Taille du tableau
+        private final String type;          // Type des éléments (ENTIER, REEL, TEXTE)
+
+        public ArrayDeclarationNode(String nom, int taille, String type) {
+            this.nom = nom;
+            this.taille = taille;
+            this.type = type;
+        }
+
+        public String getNom() { return nom; }
+        public int getTaille() { return taille; }
+        public String getType() { return type; }
+
+        @Override
+        public void accepter(NodeVisitor visiteur) {
+            visiteur.visiter(this);
+        }
+    }
+
+    /**
+     * Nœud représentant un accès à un élément de tableau.
+     * Ex: nombres[i] ou tableau[5]
+     */
+    public static class ArrayAccessNode extends Node {
+        private final String nom;   // Nom du tableau
+        private final Node indice;  // Expression de l'indice
+
+        public ArrayAccessNode(String nom, Node indice) {
+            this.nom = nom;
+            this.indice = indice;
+        }
+
+        public String getNom() { return nom; }
+        public Node getIndice() { return indice; }
+
+        @Override
+        public void accepter(NodeVisitor visiteur) {
+            visiteur.visiter(this);
+        }
+    }
+
+    // ==================== NŒUDS DE SWITCH ====================
+
+    /**
+     * Classe représentant un cas dans un switch.
+     */
+    public static class CaseNode {
+        private final int valeur;           // Valeur du cas
+        private final BlockNode instructions; // Instructions du cas
+
+        public CaseNode(int valeur, BlockNode instructions) {
+            this.valeur = valeur;
+            this.instructions = instructions;
+        }
+
+        public int getValeur() { return valeur; }
+        public BlockNode getInstructions() { return instructions; }
+    }
+
+    /**
+     * Nœud représentant une instruction CAS (switch).
+     * Ex: CAS variable FAIRE
+     *         1: instruction
+     *         2: instruction
+     *         DEFAUT: instruction
+     *     FINCAS
+     */
+    public static class SwitchNode extends Node {
+        private final Node expression;          // Expression à tester
+        private final List<CaseNode> cases;     // Cas du switch
+        private final BlockNode caseDefaut;     // Cas par défaut (peut être null)
+
+        public SwitchNode(Node expression, List<CaseNode> cases, BlockNode caseDefaut) {
+            this.expression = expression;
+            this.cases = cases;
+            this.caseDefaut = caseDefaut;
+        }
+
+        public Node getExpression() { return expression; }
+        public List<CaseNode> getCases() { return cases; }
+        public BlockNode getCaseDefaut() { return caseDefaut; }
 
         @Override
         public void accepter(NodeVisitor visiteur) {
